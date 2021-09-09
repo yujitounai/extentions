@@ -1,0 +1,17 @@
+{
+  "name": "API Key Getter",
+  "action": {},
+  "manifest_version": 3,
+  "version": "0.1",
+  "description": "htmlとコードからAPIキーとかを探すよ",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*/"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
