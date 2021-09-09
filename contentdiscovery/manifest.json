@@ -1,0 +1,17 @@
+{
+  "name": "Content Discovery",
+  "action": {},
+  "manifest_version": 3,
+  "version": "0.1",
+  "description": "スクリプトレットを使い回して隠しファイルを探す",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*/"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
