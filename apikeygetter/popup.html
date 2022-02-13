@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>declarativeNetRequest Option</title>
+<style>
+body{
+    width: 400px;
+    color: #050505;
+    background:darkorange;
+    font:12px/18px monospace;
+    overflow:auto;
+    border-radius:8px;
+   
+}
+h1{
+    color: #fff;
+    font-weight: 900;
+    font-size:24px;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.caption{
+    background:cornflowerblue;
+    padding: 5px;
+    border-radius:8px 8px 0px 0px;
+    word-wrap: break-word;
+}
+.box{
+    background:rgb(250, 242, 232);
+    border: solid 1px #ccc;
+    padding: 10px;
+    word-wrap: break-word;
+}
+</style>
+</head>
+<body>
+<h1>API key finder</h1>   
+<div class="caption">見つかったAPIキーなど</div>
+
+<div id="apikeys" class="box"></div>
+<div class="caption">iframe一覧</div>
+<div id="iframes" class="box"></div>
+<div class="caption">script一覧</div>
+<div id="scripts" class="box"></div>
+<script src="popup.js"></script>
+</body>
+</html>

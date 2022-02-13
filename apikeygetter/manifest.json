@@ -1,16 +1,24 @@
 {
   "name": "API Key Getter",
-  "action": {},
+  "action": {
+      "default_popup": "popup.html"
+  },
   "manifest_version": 3,
-  "version": "0.1",
+  "version": "0.2",
   "description": "htmlとコードからAPIキーとかを探すよ",
   "permissions": [
+    "tabs",
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage"
   ],
   "host_permissions": [
     "*://*/"
   ],
+
+  "icons": { "16": "icon.png",
+           "48": "icon.png",
+          "128": "icon.png" },
   "background": {
     "service_worker": "background.js"
   }
