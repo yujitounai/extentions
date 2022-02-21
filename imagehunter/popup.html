@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<style>
+body{
+    width: 440px;
+    color: #050505;
+    background:#13ACAA;
+    font:12px/18px monospace;
+    overflow:auto;
+    border-radius:8px;
+   
+}
+h1{
+    color: #fff;
+    font-weight: 900;
+    font-size:24px;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.caption{
+    background:#275D67;
+    color:#fff;
+    font-weight: 900;
+    font-size:20px;
+    font-family: 'Open Sans', sans-serif;
+    padding: 5px;
+    word-wrap: break-word;
+}
+.box{
+    background:rgb(250, 242, 232);
+    border: solid 1px #ccc;
+    padding: 10px;
+    word-wrap: break-word;
+}
+.imagespan{
+  position:relative;
+}
+.google_search_link{
+    background:rgb(250, 242, 232);
+    border: solid 1px #ccc;
+    padding: 1px;
+    word-wrap: break-word;
+    position:absolute;
+	bottom: 85px;
+	right: 30px;
+    width: 15px;
+    height:15px;
+}
+.bing_search_link{
+    background:rgb(250, 242, 232);
+    border: solid 1px #ccc;
+    padding: 1px;
+    word-wrap: break-word;
+    position:absolute;
+	bottom: 85px;
+	right:15px;
+    width: 15px;
+    height:15px;
+}
+.yandex_search_link{
+    background:rgb(250, 242, 232);
+    border: solid 1px #ccc;
+    padding: 1px;
+    word-wrap: break-word;
+    position:absolute;
+	bottom: 85px;
+	right:0px;
+    width: 15px;
+    height:15px;
+}
+.copy_link{
+    background:rgb(250, 242, 232);
+    border: solid 1px #ccc;
+    padding: 1px;
+    word-wrap: break-word;
+    position:absolute;
+	bottom: 85px;
+	right: 85px;
+    width: 15px;
+    height:15px;
+}
+.GPSlink{
+    background:rgb(248, 0, 0);
+    color:#FFF;
+    border: solid 1px #ccc;
+    padding: 1px;
+    word-wrap: break-word;
+    position:absolute;
+	bottom: 0px;
+	right:0px;
+    width: 96px;
+    text-align: center;
+    opacity:0.85;
+}
+
+</style>
+<meta charset="utf-8">
+    <script src="exif.js"></script>
+    <script src="script.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+</head>
+<body>
+<div class="caption">画像一覧</div>
+<div id="imgs" class="box"></div>
+</body>
+</html>
