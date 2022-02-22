@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
         img_element.setAttribute("id", "img_"+img_cnt);
         img_element.setAttribute("height", "100");
         img_element.setAttribute("width", "100");
+        img_element.setAttribute("title", img);
         link_element.appendChild(img_element);
         //検索span
         let search_span_element = document.createElement('span');

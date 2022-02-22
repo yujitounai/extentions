@@ -8,14 +8,12 @@
   "description": "サイトの画像の実際のURLを探すよ",
   "permissions": [
     "tabs",
-    "activeTab",
     "scripting",
     "storage"
   ],
   "host_permissions": [
     "*://*/"
   ],
-
   "icons": { "16": "icon.png",
            "48": "icon.png",
           "128": "icon.png" },
