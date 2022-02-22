@@ -1,4 +1,4 @@
-function searchApiKeyPopup() {
+function enumerateImages() {
 	console.log(1)
 	//タブが表示されたときのイベント
 	let imgsArray=[];
@@ -86,7 +86,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 			if(tab.url.startsWith('http://') ||tab.url.startsWith('https://')){
 				chrome.scripting.executeScript({
 					target: { tabId: tab.id },
-					function: searchApiKeyPopup
+					function: enumerateImages
 				});
 			}
 		} catch(e){}
@@ -96,16 +96,32 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
 // タブが切り替わった時のイベント
 chrome.tabs.onActivated.addListener(function (tabId) {
-    chrome.tabs.query({"active": true}, function (tab) {
+    chrome.tabs.query({"active": true,lastFocusedWindow: true}, function (tab) {
 		try{
 			console.log("onActivated:"+tab[0].url); // 切り替わったタブのURL
 			if(tab[0].url.startsWith('http://') ||tab[0].url.startsWith('https://')){
 				chrome.scripting.executeScript({
 					target: { tabId: tab[0].id },
-					function: searchApiKeyPopup
+					function: enumerateImages
 				});
 			}
 		}catch(e){console.log(0)}
+        //chrome.tabs.remove(tab[0].id); //切り替わったタブを削除
+    });
+});
+
+// ウインドウが切り替わったときのイベント
+chrome.windows.onFocusChanged.addListener(function(window) {
+    chrome.tabs.query({'active': true,'lastFocusedWindow': true}, function (tab) {
+		try{
+			console.log(tab[0].url); // 切り替わったタブのURL
+			if(tab[0].url.startsWith('http://') ||tab[0].url.startsWith('https://')){
+				chrome.scripting.executeScript({
+					target: { tabId: tab[0].id },
+					function: enumerateImages
+				});
+			}
+		}catch(e){}
         //chrome.tabs.remove(tab[0].id); //切り替わったタブを削除
     });
 });
