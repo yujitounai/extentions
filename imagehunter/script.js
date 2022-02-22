@@ -5,15 +5,6 @@ let img_cnt=0;
 
 //DOMツリー構築終了時
 document.addEventListener("DOMContentLoaded", function () {
-  //var imageUrl = "https://photo-studio9.com/wp-content/uploads/2014/01/140108sample2.jpg";
-  //document.getElementById("img").innerHTML = "<img src =" + imageUrl + " id='img1' width='150' height='150' >" ;
-  /*
-  var img_element = document.createElement('img');
-  img_element.src = 'https://bogus.jp/img1.jpg'; // 画像パス
-  img_element.setAttribute("id", "img2");
-  img_element.setAttribute("width", "100");
-  document.body.appendChild(img_element);
-*/
   chrome.storage.local.get(defaults, function(items) {
     //書き出し先タグ
     const imgs = document.getElementById('imgs');
@@ -167,86 +158,3 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 });
-
-
-//全ページロード終了時
-//window.onload=getExif;
-
-function getExif() {
-  var img1 = document.getElementById("img1");
-/*
-  EXIF.getData(img1, function() {
-    if(Object.keys(EXIF.getAllTags(this)).length === 0 && EXIF.getAllTags(this).constructor === Object){
-      document.getElementById("exifinfo").style.display = "none";
-      document.getElementById("test").innerHTML = "EXIF情報は見つかりませんでした"
-      return;
-    }else{
-      var ImageDescription = EXIF.getTag(this,"ImageDescription");
-      var Maker = EXIF.getTag(this, "Make");
-      var Model = EXIF.getTag(this, "Model");
-      var DateTime = EXIF.getTag(this,"DateTime");
-      var ExifVersion = EXIF.getTag(this,"ExifVersion");
-      var GPSVersion = EXIF.getTag(this,"GPSVersionID");
-      var GPSLatitude = EXIF.getTag(this,"GPSLatitude");
-      var GPSLongitude = EXIF.getTag(this,"GPSLongitude");
-		  var makeAndModel = document.getElementById("makeAndModel");
-      if(ImageDescription === undefined){
-        ImageDescription = "未定義";
-      }
-      if(Maker === undefined){
-        Maker = "未定義";
-      }
-      if(Model === undefined){
-        Model = "未定義";
-      }
-      if(DateTime === undefined){
-        DateTime = "未定義";
-      }
-      if(ExifVersion === undefined){
-        ExifVersion = "未定義";
-      }
-      if(GPSVersion === undefined){
-        GPSVersion = "未定義";
-      }
-      if(GPSLatitude === undefined){
-        GPSLatitude = "未定義";
-      }
-      if(GPSLongitude === undefined){
-        GPSLongitude = "未定義";
-      }
-      document.getElementById('title').innerHTML = ImageDescription;
-      document.getElementById('maker').innerHTML = Maker;
-      document.getElementById('model').innerHTML = Model;
-      document.getElementById('date').innerHTML = DateTime;
-      document.getElementById('exifversion').innerHTML = ExifVersion;
-      document.getElementById('gpsversion').innerHTML = GPSVersion;
-      document.getElementById('latitude').innerHTML = GPSLatitude;
-	    document.getElementById('longitude').innerHTML = GPSLongitude;
-	    console.log(GPSLongitude)
-    }
-  });
-  */
-  var imgnodes = document.querySelectorAll("[id^='img_']");
-  //console.log(imgnodes);
-  imgnodes.forEach(function(image) {
-    
-    EXIF.getData(image, function() {
-      if(Object.keys(EXIF.getAllTags(this)).length === 0 && EXIF.getAllTags(this).constructor === Object){
-        console.log(`${image.id}:NO EXIF`);
-        return;
-      }else{
-        var make = EXIF.getTag(this, "Make");
-        var model = EXIF.getTag(this, "Model");
-        var GPSLatitude = EXIF.getTag(this,"GPSLatitude");
-        var GPSLongitude = EXIF.getTag(this,"GPSLongitude");
-        console.log(`${image.id}:${make},${model},緯度:${GPSLatitude},経度:${GPSLongitude}`);
-        if(GPSLatitude!==undefined && GPSLongitude!==undefined){
-          var gps_element = document.createElement('div');
-          gps_element.innerText =image.id+":緯度:"+ GPSLatitude+"経度:"+GPSLongitude; // 画像パス
-          gps_element.setAttribute("id", "GPS_"+image.id);
-          document.body.appendChild(gps_element);
-        }
-      }
-    });
-  });
-}
