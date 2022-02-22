@@ -29,6 +29,10 @@ function searchApiKeyPopup() {
 		{ "name" : "slack token" ,"regexp" : "xoxp-[\\d]{13}-[\\d]{13}-[\\d]{13}-[\\w]{32}"},
 		{ "name" : "UUID" ,"regexp" : "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"},
 		{ "name" : "4gtoken" ,"regexp" : "4gtoken"},//apikeyはUUID
+		{ "name" : "Private Key" ,"regexp" : "-----BEGIN [\\w]{2,3} PRIVATE KEY-----"},//RSA DSA EC
+		{ "name" : "github access token" ,"regexp" : "[a-zA-Z0-9_-]*:[a-zA-Z0-9_\-]+@github\.com"},
+		{ "name" : "json web token" ,"regexp" : "ey[A-Za-z0-9-_=]+\\.ey[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_.+/=]+"},
+		{ "name" : "yahoo!japan Client ID" ,"regexp" : "dj0[A-Za-z0-9]{52}-"},
 	];
 	//ApiKeyを探す
 	function searchApiKey(innerhtml,src){
@@ -98,7 +102,7 @@ function searchApiKeyPopup() {
 					}
 				})
 				.catch((error) => {
-					console.log(`********************\nError:${script.src}:${error}\n`);
+					console.log(`Error:${script.src}:${error}\n`);
 				});
 			}
 		});
@@ -142,26 +146,50 @@ function searchApiKeyPopup() {
 
 // タブが更新された時のイベント
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-	console.log(tab.url); // → 更新されたURL
+	//console.log(tab.url); // → 更新されたURL
 	if(changeInfo.status=="complete"){// loading,completeの2回発生するので
 		console.log(changeInfo.status);
-		chrome.scripting.executeScript({
-			target: { tabId: tab.id },
-			function: searchApiKeyPopup 			
-		});
-		
+		try{
+			console.log(tab.url); // 切り替わったタブのURL
+			if(tab.url.startsWith('http://') ||tab.url.startsWith('https://')){
+				chrome.scripting.executeScript({
+					target: { tabId: tab.id },
+					function: searchApiKeyPopup 			
+				});
+			}
+		} catch(e){}
 	}
    //chrome.tabs.remove(tabId); // 更新されたタブのidを削除
 });
 
 // タブが切り替わった時のイベント
 chrome.tabs.onActivated.addListener(function (tabId) {
-    chrome.tabs.query({"active": true}, function (tab) {
-		console.log(tab[0].url); // 切り替わったタブのURL
-		chrome.scripting.executeScript({
-			target: { tabId: tab[0].id },
-			function: searchApiKeyPopup 			
-		});
+    chrome.tabs.query({'active': true,'lastFocusedWindow': true}, function (tab) {
+		try{
+			console.log(tab[0].url); // 切り替わったタブのURL
+			if(tab[0].url.startsWith('http://') ||tab[0].url.startsWith('https://')){
+				chrome.scripting.executeScript({
+					target: { tabId: tab[0].id },
+					function: searchApiKeyPopup
+				});
+			}
+		}catch(e){}
+        //chrome.tabs.remove(tab[0].id); //切り替わったタブを削除
+    });
+});
+
+// ウインドウが切り替わったときのイベント
+chrome.windows.onFocusChanged.addListener(function(window) {
+    chrome.tabs.query({'active': true,'lastFocusedWindow': true}, function (tab) {
+		try{
+			console.log(tab[0].url); // 切り替わったタブのURL
+			if(tab[0].url.startsWith('http://') ||tab[0].url.startsWith('https://')){
+				chrome.scripting.executeScript({
+					target: { tabId: tab[0].id },
+					function: searchApiKeyPopup
+				});
+			}
+		}catch(e){}
         //chrome.tabs.remove(tab[0].id); //切り替わったタブを削除
     });
 });
@@ -179,8 +207,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse)=> {
 chrome.runtime.sendMessage('YO!');
 
 
-  
 
 //todo
-//見つかったときアイコンに印
 //クロスオリジンの取得
+//location.originの表示
