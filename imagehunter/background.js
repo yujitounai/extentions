@@ -1,5 +1,4 @@
 function enumerateImages() {
-	console.log(1)
 	//タブが表示されたときのイベント
 	let imgsArray=[];
 	let i=0;
@@ -16,25 +15,7 @@ function enumerateImages() {
 		"yahoo.co.jp"
 	];
 
-	const assets = [
-		{ "name" : "AWSのアクセスキー", "regexp" : '"AKIA[\\w]{16}"'},//secretではない
-		{ "name" : "AWSのCredentials", "regexp" : '"Credentials"'},//"AccessKeyId" "SessionToken"
-		{ "name" : "GOOGLEのAPIキー", "regexp" : '["=]AIza[0-9A-Za-z\\-_]{35}'},
-		{ "name" : "プライベートIPアドレス" ,"regexp" : "192\\.168\\.[12]?[\\d]{1,2}\\.[12]?[\\d]{1,2}"},
-		{ "name" : "プライベートIPアドレス" ,"regexp" : "172\\.[123]?[0-9]?\\.[12]?[\\d]{1,2}\\.[12]?[\\d]{1,2}"},
-		{ "name" : "S3 Bucket" ,"regexp" : "http[s]?://[\\w-]{1,255}?\\.s3\\.[\\w-]{10,20}?\\.amazonaws\\.com/"},
-		{ "name" : "slack token" ,"regexp" : "xoxp-[\\d]{13}-[\\d]{13}-[\\d]{13}-[\\w]{32}"},
-		{ "name" : "UUID" ,"regexp" : "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"},
-		{ "name" : "4gtoken" ,"regexp" : "4gtoken"},//apikeyはUUID
-		{ "name" : "Private Key" ,"regexp" : "-----BEGIN [\\w]{2,3} PRIVATE KEY-----"},//RSA DSA EC
-		{ "name" : "github access token" ,"regexp" : "[a-zA-Z0-9_-]*:[a-zA-Z0-9_\-]+@github\.com"},
-		{ "name" : "json web token" ,"regexp" : "ey[A-Za-z0-9-_=]+\\.ey[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_.+/=]+"},
-		{ "name" : "yahoo!japan Client ID" ,"regexp" : "dj0[A-Za-z0-9]{52}-"},
-	];
-
 	const innerhtml=document.body.parentNode.innerHTML;
-	
-
 	console.log(`-------------:${document.domain}---------\n`);
 	let avoidflag=0;
 	avoiddomains.forEach(function(avoiddomain){
@@ -45,7 +26,6 @@ function enumerateImages() {
 
 	if (avoidflag==0){
 		//DOMツリーから検索
-		console.log("test")
 		//image情報を表示
 		const imgs = document.querySelectorAll('img');
 		imgs.forEach(function(img){
@@ -74,8 +54,6 @@ function enumerateImages() {
 	}
 }
 
-
-
 // タブが更新された時のイベント
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 	//console.log(tab.url); // → 更新されたURL
@@ -91,7 +69,6 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 			}
 		} catch(e){}
 	}
-   //chrome.tabs.remove(tabId); // 更新されたタブのidを削除
 });
 
 // タブが切り替わった時のイベント
@@ -106,7 +83,6 @@ chrome.tabs.onActivated.addListener(function (tabId) {
 				});
 			}
 		}catch(e){console.log(0)}
-        //chrome.tabs.remove(tab[0].id); //切り替わったタブを削除
     });
 });
 
@@ -122,7 +98,6 @@ chrome.windows.onFocusChanged.addListener(function(window) {
 				});
 			}
 		}catch(e){}
-        //chrome.tabs.remove(tab[0].id); //切り替わったタブを削除
     });
 });
 
@@ -137,10 +112,3 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse)=> {
 });
 // メッセージ送信する
 chrome.runtime.sendMessage('YO!');
-
-
-  
-
-//todo
-//クロスオリジンの取得
-//location.originの表示
