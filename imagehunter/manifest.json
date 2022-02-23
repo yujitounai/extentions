@@ -4,7 +4,7 @@
       "default_popup": "popup.html"
   },
   "manifest_version": 3,
-  "version": "0.1",
+  "version": "0.1.4",
   "description": "サイトの画像の実際のURLを探すよ",
   "permissions": [
     "tabs",

@@ -5,16 +5,15 @@ function enumerateImages() {
 
 	//重たいので触りたくないドメイン
 	const avoiddomains=[
+		"localhost",
 		"gmail.com",
 		"amazon.com",
 		"amazon.co.jp",
-		"facebook.com",
 		"youtube.com",
 		"google.com",
-		"twitter.com",
 		"yahoo.co.jp"
 	];
-
+	try{
 	const innerhtml=document.body.parentNode.innerHTML;
 	console.log(`-------------:${document.domain}---------\n`);
 	let avoidflag=0;
@@ -52,6 +51,9 @@ function enumerateImages() {
 		//検索しないリストに入っているとき
 		chrome.runtime.sendMessage({badgeText: "no"});
 	}
+	}catch(e){
+		console.log(e)
+	}
 }
 
 // タブが更新された時のイベント
@@ -67,7 +69,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 					function: enumerateImages
 				});
 			}
-		} catch(e){}
+		} catch(e){console.log(e)}
 	}
 });
 
@@ -82,7 +84,7 @@ chrome.tabs.onActivated.addListener(function (tabId) {
 					function: enumerateImages
 				});
 			}
-		}catch(e){console.log(0)}
+		}catch(e){console.log(e)}
     });
 });
 
@@ -97,7 +99,7 @@ chrome.windows.onFocusChanged.addListener(function(window) {
 					function: enumerateImages
 				});
 			}
-		}catch(e){}
+		}catch(e){console.log(e)}
     });
 });
 

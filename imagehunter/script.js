@@ -14,13 +14,14 @@ document.addEventListener("DOMContentLoaded", function () {
         //spanの作成
         let imgspan_element = document.createElement('span');
         imgspan_element.setAttribute("class", "imagespan");
-        imgs.appendChild(imgspan_element);
+
         //画像へのリンク作成
         let link_element = document.createElement('a');
         link_element.href=img;
         link_element.setAttribute("target", "_blank");
         imgspan_element.appendChild(link_element);
-        //画像タグの作成
+
+                //画像タグの作成
         let img_element = document.createElement('img');
         img_element.src = img; // 画像パス
         img_element.setAttribute("id", "img_"+img_cnt);
@@ -28,6 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
         img_element.setAttribute("width", "100");
         img_element.setAttribute("title", img);
         link_element.appendChild(img_element);
+
         //検索span
         let search_span_element = document.createElement('span');
         imgspan_element.appendChild(search_span_element);
@@ -96,13 +98,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
         search_span_element.appendChild(linkcopy_element);
         */
-        //exif情報の取得
+        //exif情報の取得と調査用の極小画像は表示しないようにする
         img_element.onload = function(){
-          EXIF.getData(img_element, function() {
-            if(Object.keys(EXIF.getAllTags(this)).length === 0 && EXIF.getAllTags(this).constructor === Object){
+          const width = img_element.naturalWidth;
+          const height = img_element.naturalHeight;
+          if (width>2 && height>2){
+            EXIF.getData(img_element, function() {
+              if(Object.keys(EXIF.getAllTags(this)).length === 0 && EXIF.getAllTags(this).constructor === Object){
               console.log(`${img_element.id}:NO EXIF`);
               return;
-            }else{
+              }else{
               let make = EXIF.getTag(this, "Make");
               let model = EXIF.getTag(this, "Model");
               let GPSLatitude = EXIF.getTag(this,"GPSLatitude");
@@ -149,10 +154,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log(`${img_element.id}:${make},${model},${XResolution},${YResolution} NO GPS DATA`);
                 */
               }
-            }
-          });
+              }
+            });
+            imgs.appendChild(imgspan_element);
+          }
         };
-
+        //インスタとか貼れないけどURLは取れる奴は表示
+        img_element.onerror=function(){
+          imgs.appendChild(imgspan_element);
+        }
         img_cnt++;
       }
     });
