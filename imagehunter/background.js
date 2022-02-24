@@ -47,6 +47,9 @@ function enumerateImages() {
 		chrome.storage.local.set(entity, function() {
     		console.log('stored');
 		});
+
+		// メッセージ送信する
+		chrome.runtime.sendMessage('YO!');
 	}else{
 		//検索しないリストに入っているとき
 		chrome.runtime.sendMessage({badgeText: "no"});
@@ -110,7 +113,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse)=> {
 		  tabId: sender.tab.id,
 		  text: message.badgeText,
 		}, ()=> chrome.runtime.lastError); //ignore errors due to closed/prerendered tabs
+	}else if(message.reload != null){
+		console.log('reload');
+		chrome.tabs.query({"active": true,lastFocusedWindow: true}, function (tab) {
+			try{
+				console.log("onActivated:"+tab[0].url); // 切り替わったタブのURL
+				if(tab[0].url.startsWith('http://') ||tab[0].url.startsWith('https://')){
+					chrome.scripting.executeScript({
+						target: { tabId: tab[0].id },
+						function: enumerateImages
+					});
+				}
+			}catch(e){console.log(e)}
+		});
 	}
 });
 // メッセージ送信する
 chrome.runtime.sendMessage('YO!');
+
+async function getCurrentTab() {
+  let qo = {active: true, currentWindow: true};
+  let [tab] = await chrome.tabs.query(qo);
+  return tab;
+}

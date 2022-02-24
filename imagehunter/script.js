@@ -167,4 +167,20 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+  //ボタンクリック
+  const button = document.getElementById("reload");
+  button.addEventListener("click", function () {
+    chrome.runtime.sendMessage({reload: "go"});
+  });
+  // イベントハンドラーをセットする  
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse)=> {
+	  if (message!= null) {
+      location.reload();
+	  }
+  });
+
+
+
+
 });
+
