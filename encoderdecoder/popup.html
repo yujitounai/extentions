@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<script src="script.js"></script>
+<style>
+body {
+	background-color:#E6E2AF;
+	color:#454131;
+	font-size:9pt;
+}
+button{
+    font-size:9pt;
+}
+
+</style>
+<title>文字列操作</title>
+</head>
+<body>
+<label for="story">ここに変換したいテキストを入力</label>
+<br>
+<textarea id="before" rows="5" cols="50">テキスト</textarea>
+<textarea id="after" rows="5" cols="50"></textarea>
+
+<p>やりたいことを選択</p>
+<form id="wantto">
+<div>
+  <input type="radio" name="todo" value="urlencodeComponent" checked>
+  <label for="urlencodeComponent">URLエンコード(予約文字エンコードする)</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="urldecodeComponent">
+  <label for="urldecodeComponent">URLデコード</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="urlencode">
+  <label for="urlencode">URLエンコード(予約文字エンコードしない)</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="urldecode">
+  <label for="urldecode">URLデコード</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="base64encode">
+  <label for="base64encode">Base64エンコード</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="base64decode">
+  <label for="base64decode">Base64デコード</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="unicodeescape">
+  <label for="unicodeescape">Unicodeエスケープ（\uXXXX\uXXXX）</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="unicodeunescape">
+  <label for="unicodeunescape">Unicodeアンエスケープ（\uXXXX\uXXXX）</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="numeric16encode">
+  <label for="numeric16encode">数値文字参照16進エンコード（&amp;#xXXXX;&amp;#xXXXX;）</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="numeric16decode">
+  <label for="numeric16decode">数値文字参照16進デコード（&amp;#xXXXX;&amp;#xXXXX;）</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="numeric10encode">
+  <label for="numeric10encode">数値文字参照10進エンコード（&amp;#XXXXX;&amp;#XXXXX;）</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="numeric10decode">
+  <label for="numeric10decode">数値文字参照10進デコード（&amp;#XXXXX;&amp;#XXXXX;）</label>
+</div>
+
+
+<div>
+  <input type="radio" name="todo" value="unicodeencode">
+  <label for="unicodeencode">Unicodeエンコード（227,131,134,227,…）</label>
+</div>
+<div>
+  <input type="radio" name="todo" value="unicodedecode">
+  <label for="unicodedecode">Unicodeデコード（227,131,134,227,…）</label>
+</div>
+
+<div>
+  <input type="radio" name="todo" value="unescapeHTML">
+  <label for="unescapeHTML">実体参照デコード（&amp;quot;）</label>
+</div>
+</form>
+
+<button id="change">変換</button>
+
+</body>
+</html>

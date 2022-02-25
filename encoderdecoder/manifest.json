@@ -1,0 +1,12 @@
+{
+  "name": "Encoder and Decoder",
+  "action": {
+      "default_popup": "popup.html"
+  },
+  "manifest_version": 3,
+  "version": "0.1",
+  "description": "いろんなエンコードとかデコードとかするよ",
+  "icons": { "16": "icon.png",
+           "48": "icon.png",
+          "128": "icon.png" }
+}
