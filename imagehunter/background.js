@@ -29,7 +29,7 @@ function enumerateImages() {
 		const imgs = document.querySelectorAll('img');
 		imgs.forEach(function(img){
 			if(img){
-				console.log(`img:${img.src}`);
+				//console.log(`img:${img.src}`);
 				if(img.src.startsWith('http://') ||img.src.startsWith('https://')){
 					i++;
 					imgsArray.push(img.src);
@@ -43,9 +43,10 @@ function enumerateImages() {
 		let entity = {};
 		entity.data = {col1: 'new data'};
 		entity.data.imgs=imgsArray;
+		entity.site ={url:document.URL};		
 
 		chrome.storage.local.set(entity, function() {
-    		console.log('stored');
+    		console.log('images stored');
 		});
 
 		// メッセージ送信する
@@ -102,7 +103,17 @@ chrome.windows.onFocusChanged.addListener(function(window) {
 					function: enumerateImages
 				});
 			}
-		}catch(e){console.log(e)}
+		}catch(e){
+			chrome.storage.local.get('site' ,function(items) { 
+				page=items.site.url
+				chrome.tabs.query({"url": page}, function (tab) {
+					chrome.scripting.executeScript({
+						target: { tabId: tab[0].id },
+						function: enumerateImages
+					});
+				});
+			});
+		}
     });
 });
 
@@ -113,6 +124,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse)=> {
 		  tabId: sender.tab.id,
 		  text: message.badgeText,
 		}, ()=> chrome.runtime.lastError); //ignore errors due to closed/prerendered tabs
+		chrome.action.setBadgeBackgroundColor({
+			color: "blue"
+		}, ()=> chrome.runtime.lastError);
 	}else if(message.reload != null){
 		console.log('reload');
 		chrome.tabs.query({"active": true,lastFocusedWindow: true}, function (tab) {
@@ -129,7 +143,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse)=> {
 	}
 });
 // メッセージ送信する
-chrome.runtime.sendMessage('YO!');
+//chrome.runtime.sendMessage('YO!');
 
 async function getCurrentTab() {
   let qo = {active: true, currentWindow: true};

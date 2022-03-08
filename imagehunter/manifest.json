@@ -4,7 +4,7 @@
       "default_popup": "popup.html"
   },
   "manifest_version": 3,
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "サイトの画像の実際のURLを探すよ",
   "permissions": [
     "tabs",
@@ -12,8 +12,7 @@
     "storage"
   ],
   "host_permissions": [
-    "https://*/",
-    "http://*/"
+    "*://*/"
   ],
   "icons": { "16": "icon.png",
            "48": "icon.png",

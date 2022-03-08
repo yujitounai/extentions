@@ -143,7 +143,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 search_span_element.appendChild(gps_element);
                 console.log(`${img_element.id}:${make},${model},緯度:${latitude},経度:${longitude}`);
                 //https://www.google.com/maps?q=35.31966666666667,139.54766666666666
-
               }else{
                 //デバッグ用に情報表示
                 /*
