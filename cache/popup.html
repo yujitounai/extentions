@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Resources Popup</title>
+</head>
+<body>
+    <textarea id="resourceList" rows="5" cols="50"></textarea>
+    <textarea id="jsHeaders" rows="5" cols="50"></textarea>
+    <p id="keywordResults"></p>
+
+
+
+    <!-- URLを表示する要素 -->
+    <p id="xForwardedHostFoundLine"></p>
+    <!-- URLを表示する要素 -->
+    <p id="xForwardedForFoundLine"></p>
+    <!-- URLを表示する要素 -->
+    <p id="xOthersFoundLine"></p>
+    <!-- staticscanで見つかったURLを表示する要素 -->
+    [StaticScan]
+    <p id="staticscan"></p>
+    <!-- jsscanで見つかったURLを表示する要素 -->
+    [JavaScript]
+    <p id="jsscan"></p>
+    [正規表現]
+    <p id="regexscan"></p>
+    [怪しい正規表現]
+    <p id="suspicious"></p>
+    [prototypepollution]
+    <p id="prototypepollution"></p>
+    <p id="userInputScan"></p>
+    <button id="loadJs">Load JS Headers</button><br>
+    <button id="jQuery171">jQ172 ReDoS</button>
+    <button id="jQuery183">jQ183 ReDoS</button>
+    <button id="XSLeak">XS-Leak</button>
+    <button id="pp">pp</button>
+    <script src="popup.js"></script>
+</body>
+</html>
