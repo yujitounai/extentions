@@ -14,7 +14,6 @@ function enumerateImages() {
 		"yahoo.co.jp"
 	];
 	try{
-	const innerhtml=document.body.parentNode.innerHTML;
 	console.log(`-------------:${document.domain}---------\n`);
 	let avoidflag=0;
 	avoiddomains.forEach(function(avoiddomain){
@@ -50,7 +49,7 @@ function enumerateImages() {
 		});
 
 		// メッセージ送信する
-		chrome.runtime.sendMessage('YO!');
+		//chrome.runtime.sendMessage('YO!');
 	}else{
 		//検索しないリストに入っているとき
 		chrome.runtime.sendMessage({badgeText: "no"});
@@ -93,29 +92,25 @@ chrome.tabs.onActivated.addListener(function (tabId) {
 });
 
 // ウインドウが切り替わったときのイベント
-chrome.windows.onFocusChanged.addListener(function(window) {
-    chrome.tabs.query({'active': true,'lastFocusedWindow': true}, function (tab) {
-		try{
-			console.log(tab[0].url); // 切り替わったタブのURL
-			if(tab[0].url.startsWith('http://') ||tab[0].url.startsWith('https://')){
-				chrome.scripting.executeScript({
-					target: { tabId: tab[0].id },
-					function: enumerateImages
-				});
-			}
-		}catch(e){
-			chrome.storage.local.get('site' ,function(items) { 
-				page=items.site.url
-				chrome.tabs.query({"url": page}, function (tab) {
-					chrome.scripting.executeScript({
-						target: { tabId: tab[0].id },
-						function: enumerateImages
-					});
-				});
-			});
-		}
+chrome.windows.onFocusChanged.addListener(function(windowId) {
+    chrome.tabs.query({ active: true, lastFocusedWindow: true }, function(tabs) {
+      if (!tabs || tabs.length === 0) {
+        // タブが見つからなかった場合の処理
+        console.log('No active tab found.');
+        return;
+      }
+      // ここに実行したい処理を記述
+      const activeTab = tabs[0];
+      console.log('onFocusChanged:' + activeTab.url);
+      if (activeTab.url.startsWith('http://') || activeTab.url.startsWith('https://')) {
+        chrome.scripting.executeScript({
+          target: { tabId: activeTab.id },
+          function: enumerateImages
+        });
+      }
     });
-});
+  });
+  
 
 // イベントハンドラーをセットする  
 chrome.runtime.onMessage.addListener((message, sender, sendResponse)=> {
@@ -141,6 +136,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse)=> {
 			}catch(e){console.log(e)}
 		});
 	}
+	//sendResponseは書かないとUncaught (in promise) Error:になる
+	sendResponse({ data: "Hey!" });
+	return;
 });
 // メッセージ送信する
 //chrome.runtime.sendMessage('YO!');

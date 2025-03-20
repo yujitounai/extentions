@@ -1,5 +1,10 @@
-let defaults = {};
-defaults.data = {col1: 'no data'};
+let defaults = {
+  data: {
+    col1: 'no data',
+    imgs: []
+  }
+};
+
 let img_element;
 let img_cnt=0;
 
