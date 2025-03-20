@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Hidden Content Scanner</title>
+  <style>
+    body { font-family: sans-serif; padding: 10px; width: 320px; }
+    textarea { width: 100%; height: 150px; }
+    #progress { margin-top: 8px; }
+    button { margin-right: 5px; margin-bottom: 4px; }
+    #historyInfo {
+      border: 1px solid #888;
+      background: #F5F5F5;
+      padding: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hidden Content Scanner</h1>
+  <!-- 過去のスキャン履歴表示用 -->
+  <div id="historyInfo">Loading previous scan info...</div>
+  <button id="startBtn">Start</button>
+  <button id="stopBtn">Stop</button>
+  <button id="resumeBtn">Resume</button>
+  <button id="clearLogBtn">Clear Log</button>
+  <button id="clearHistoryBtn">Clear History</button>
+  <label>
+    <input type="checkbox" id="detailedMode"> Detailed Mode
+  </label>
+  <div id="progress">Progress: 0%</div>
+  <textarea id="logBox" readonly></textarea>
+  <script src="popup.js"></script>
+</body>
+</html>

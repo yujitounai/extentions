@@ -1,0 +1,27 @@
+{
+    "manifest_version": 3,
+    "name": "Hidden Content Scanner",
+    "version": "1.0",
+    "description": "同一ドメイン上の隠しコンテンツをスキャンし、過去の実行結果を表示します。",
+    "permissions": [
+      "activeTab",
+      "scripting",
+      "storage"
+    ],
+    "action": {
+      "default_popup": "popup.html"
+    },
+    "host_permissions": [
+      "*://*/*"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "web_accessible_resources": [
+      {
+        "resources": ["fileList.json", "extensionList.json"],
+        "matches": ["<all_urls>"]
+      }
+    ]
+  }
+  
