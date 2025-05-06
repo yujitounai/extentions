@@ -1,3 +1,11 @@
+// content.js の先頭付近に追加
+function shouldSuppressError(error) {
+    return error && error.message && (
+      error.message.includes('Extension context invalidated') ||
+      error.message.includes('Extension has been shutdown')
+    );
+}
+
 // 検索対象の正規表現パターン
 const PATTERNS = [
     /AKIA[0-9A-Z]{16}/g,       // AWS アクセスキー
@@ -8,41 +16,29 @@ const PATTERNS = [
 let searchResults = [];
 let isExtensionValid = true;
 
-// メッセージ送信のヘルパー関数
-function sendMessageSafely(message) {
-    if (!isExtensionValid) return;
+
+function extractContext(text, match, radius = 30) {
+    const index = text.indexOf(match);
+    if (index === -1) return text.slice(0, 100) + '...';
     
-    try {
-        chrome.runtime.sendMessage(message, response => {
-            if (chrome.runtime.lastError) {
-                console.warn('メッセージ送信エラー:', chrome.runtime.lastError);
-                if (chrome.runtime.lastError.message.includes('Extension context invalidated')) {
-                    isExtensionValid = false;
-                    observer.disconnect();
-                }
-            }
-        });
-    } catch (error) {
-        console.warn('メッセージ送信エラー:', error);
-        if (error.message.includes('Extension context invalidated')) {
-            isExtensionValid = false;
-            observer.disconnect();
-        }
-    }
+    const start = Math.max(0, index - radius);
+    const end = Math.min(text.length, index + match.length + radius);
+    const prefix = start > 0 ? '...' : '';
+    const suffix = end < text.length ? '...' : '';
+    
+    return prefix + text.slice(start, end) + suffix;
 }
 
-// 🔽 インラインスクリプトを検索
 function searchScriptContent(scriptElement) {
-    if (!isExtensionValid) return;
-    
     const scriptContent = scriptElement.textContent;
-    if (!scriptContent) return;
+    if (!scriptContent) return [];
 
+    const results = [];
     PATTERNS.forEach((pattern, patternIndex) => {
         const matches = [...scriptContent.matchAll(pattern)];
         matches.forEach(match => {
-            searchResults.push({
-                text: scriptContent.trim().slice(0, 300) + '...',
+            results.push({
+                text: extractContext(scriptContent, match[0]),
                 match: match[0],
                 pattern: patternIndex,
                 context: 'インラインスクリプト',
@@ -50,51 +46,85 @@ function searchScriptContent(scriptElement) {
             });
         });
     });
+    return results;
 }
 
-// 🔽 ページ内テキストとインラインスクリプトをスキャン
-function searchTextAndInlineScripts() {
+// メッセージ送信のヘルパー関数
+function sendMessageSafely(message) {
     if (!isExtensionValid) return;
-    
-    const textNodes = document.evaluate('//text()', document.body, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-    for (let i = 0; i < textNodes.snapshotLength; i++) {
-        const node = textNodes.snapshotItem(i);
-        const text = node.textContent;
+
+    try {
+        chrome.runtime.sendMessage(message, response => {
+            if (chrome.runtime.lastError) {
+                const err = chrome.runtime.lastError;
+                if (!shouldSuppressError(err)) {
+                    console.warn('メッセージ送信エラー:', err);
+                }
+                // エラーが Extension context invalidated の場合のみ停止フラグ設定
+                if (shouldSuppressError(err)) {
+                    isExtensionValid = false;
+                    observer.disconnect();
+                }
+            }
+        });
+    } catch (error) {
+        if (!shouldSuppressError(error)) {
+            console.warn('メッセージ送信エラー:', error);
+        }
+        if (shouldSuppressError(error)) {
+            isExtensionValid = false;
+            observer.disconnect();
+        }
+    }
+}
+
+function searchTextNodes() {
+    const results = [];
+    const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+
+    let node;
+    while ((node = walker.nextNode())) {
+        const text = node.nodeValue;
+        if (!text) continue;
 
         PATTERNS.forEach((pattern, patternIndex) => {
             const matches = [...text.matchAll(pattern)];
             matches.forEach(match => {
-                searchResults.push({
-                    text: text.trim().slice(0, 300) + '...',
+                results.push({
+                    text: extractContext(text, match[0]),
                     match: match[0],
                     pattern: patternIndex,
-                    context: node.parentElement.outerHTML.slice(0, 300) + '...',
+                    context: node.parentElement?.tagName || 'テキストノード',
                     type: 'text'
                 });
             });
         });
     }
+    return results;
+}
 
-    const scripts = document.querySelectorAll('script');
-    const externalScriptURLs = [];
+function searchTextAndInlineScripts() {
+    const results = [
+        ...searchTextNodes(),
+        ...Array.from(document.querySelectorAll('script:not([src])'))
+              .flatMap(script => searchScriptContent(script))
+    ];
 
-    scripts.forEach(script => {
-        if (script.src) {
-            externalScriptURLs.push(script.src);  // 外部は background.js に任せる
-        } else {
-            searchScriptContent(script);  // インラインは自分で処理
-        }
-    });
+    const externalScriptURLs = Array.from(document.querySelectorAll('script[src]'))
+                                 .map(script => script.src);
 
-    // インライン等の結果を送信
-    sendMessageSafely({
+    chrome.runtime.sendMessage({
         type: 'SEARCH_RESULTS',
-        results: searchResults
+        results: results
     });
 
-    // 外部スクリプトはバックグラウンドに送る
     if (externalScriptURLs.length > 0) {
-        sendMessageSafely({
+        chrome.runtime.sendMessage({
             type: 'FETCH_AND_SCAN_EXTERNAL_SCRIPTS',
             urls: externalScriptURLs
         });
@@ -105,8 +135,21 @@ function searchTextAndInlineScripts() {
 document.addEventListener('DOMContentLoaded', searchTextAndInlineScripts);
 
 // 動的変更にも対応
-const observer = new MutationObserver(() => {
-    searchTextAndInlineScripts();
-});
-
-observer.observe(document.body, { childList: true, subtree: true });
+// content.js の observer 部分を変更
+try {
+    const observer = new MutationObserver(() => {
+        if (!isExtensionValid) {
+            observer.disconnect();
+            return;
+        }
+        searchTextAndInlineScripts();
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+} catch (error) {
+    if (shouldSuppressError(error)) {
+        isExtensionValid = false;
+    } else {
+        console.warn('MutationObserver setup error:', error);
+    }
+}
