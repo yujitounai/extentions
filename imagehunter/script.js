@@ -79,6 +79,14 @@ function createCopyButton(imgUrl, id) {
   return button;
 }
 
+function openImageInBrowser(imgUrl, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  chrome.tabs.create({ url: imgUrl });
+}
+
 function appendImageCard(container, imgUrl, index) {
   const card = document.createElement('article');
   card.className = 'image-card';
@@ -86,14 +94,15 @@ function appendImageCard(container, imgUrl, index) {
   const thumbLink = document.createElement('a');
   thumbLink.className = 'image-thumb';
   thumbLink.href = imgUrl;
-  thumbLink.target = '_blank';
-  thumbLink.rel = 'noopener noreferrer';
+  thumbLink.title = imgUrl;
+  thumbLink.addEventListener('click', (event) => openImageInBrowser(imgUrl, event));
   card.appendChild(thumbLink);
 
   const imgEl = document.createElement('img');
   imgEl.src = imgUrl;
   imgEl.id = `img_${index}`;
   imgEl.title = imgUrl;
+  imgEl.alt = 'Image thumbnail';
   thumbLink.appendChild(imgEl);
 
   const overlay = document.createElement('div');

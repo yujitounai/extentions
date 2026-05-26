@@ -192,6 +192,8 @@
     aspect-ratio: 1;
     overflow: hidden;
     background: #0a0c10;
+    cursor: pointer;
+    text-decoration: none;
   }
 
   .image-thumb img {
@@ -208,7 +210,9 @@
 
   .image-overlay {
     position: absolute;
-    inset: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -221,23 +225,13 @@
 
   .image-card:hover .image-overlay {
     opacity: 1;
-    pointer-events: auto;
-  }
-
-  .exif-info {
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.75);
-    margin-bottom: 6px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-height: 15px;
   }
 
   .action-row {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
+    pointer-events: auto;
   }
 
   .action-btn {
@@ -282,6 +276,16 @@
 
   .action-btn.copied {
     background: var(--accent-soft);
+  }
+
+  .exif-info {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 15px;
   }
 
   /* Empty state */

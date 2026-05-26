@@ -4,7 +4,7 @@
       "default_popup": "popup.html"
   },
   "manifest_version": 3,
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "ページ内の画像URLを収集し、逆画像検索・EXIF/GPS解析を行います",
   "permissions": [
     "tabs",
