@@ -1,12 +1,11 @@
 {
-  "name": "Content Discovery",
+  "name": "Content Discovery (deprecated)",
   "action": {},
   "manifest_version": 3,
-  "version": "0.1",
-  "description": "スクリプトレットを使い回して隠しファイルを探す",
+  "version": "0.2.0",
+  "description": "findhiddenpages (Hidden Content Scanner v2) に統合済み。新規利用は findhiddenpages を使用してください。",
   "permissions": [
-    "activeTab",
-    "scripting"
+    "activeTab"
   ],
   "host_permissions": [
     "*://*/"

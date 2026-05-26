@@ -1,7 +1,21 @@
 [
-    "",
-    ".html",
-    ".php",
-    ".js"
-  ]
-  
+  "",
+  ".asp",
+  ".aspx",
+  ".conf",
+  ".doc",
+  ".htm",
+  ".html",
+  ".inc",
+  ".ini",
+  ".jsp",
+  ".log",
+  ".pdf",
+  ".php",
+  ".sql",
+  ".tmp",
+  ".txt",
+  ".xls",
+  ".xlsx",
+  ".xml"
+]

@@ -1,37 +1,336 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <meta charset="utf-8">
   <title>Hidden Content Scanner</title>
   <style>
-    body { font-family: sans-serif; padding: 10px; width: 320px; }
-    textarea { width: 100%; height: 150px; }
-    #progress { margin-top: 8px; }
-    button { margin-right: 5px; margin-bottom: 4px; }
-    #historyInfo {
-      border: 1px solid #888;
-      background: #F5F5F5;
-      padding: 8px;
-      margin-bottom: 8px;
+    :root {
+      --bg: #0f1218;
+      --surface: #181c24;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #eef1f6;
+      --muted: #8b95a8;
+      --accent: #6366f1;
+      --accent-soft: rgba(99, 102, 241, 0.15);
+      --success: #22c55e;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      width: 420px;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .app { padding: 14px; }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .subtitle {
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: var(--muted);
+      word-break: break-all;
+    }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      padding: 3px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 7px;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-weight: 600;
       font-size: 12px;
-      white-space: pre-wrap;
+    }
+    .tab.active {
+      background: var(--accent-soft);
+      color: #c7d2fe;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    label { font-size: 12px; color: var(--muted); }
+    select, button, textarea {
+      font: inherit;
+    }
+    select {
+      flex: 1;
+      min-width: 120px;
+      background: #11151c;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 8px;
+    }
+    button {
+      border: 1px solid var(--border);
+      background: #11151c;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    button.primary {
+      background: var(--accent-soft);
+      border-color: rgba(99, 102, 241, 0.35);
+      color: #c7d2fe;
+    }
+    button.danger {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #fecaca;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #progress {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    #targetCount {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    #results {
+      max-height: 120px;
+      overflow: auto;
+      font-size: 11px;
+    }
+    #results a {
+      color: #a5b4fc;
+      display: block;
+      word-break: break-all;
+      margin-bottom: 4px;
+    }
+    textarea {
+      width: 100%;
+      height: 140px;
+      resize: vertical;
+      background: #11151c;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+    }
+    .empty {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #c7d2fe;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge.running {
+      background: rgba(34, 197, 94, 0.15);
+      color: #86efac;
+    }
+    .guide {
+      max-height: 420px;
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .guide h2 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .guide h2:not(:first-child) {
+      margin-top: 16px;
+    }
+    .guide p {
+      margin: 0 0 8px;
+      color: var(--muted);
+    }
+    .guide ol, .guide ul {
+      margin: 0 0 8px;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+    .guide li { margin-bottom: 4px; }
+    .guide table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+    .guide th, .guide td {
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      text-align: left;
+    }
+    .guide th {
+      background: #11151c;
+      color: var(--text);
+    }
+    .guide td { color: var(--muted); }
+    .guide .note {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #fecaca;
+      font-size: 11px;
     }
   </style>
 </head>
 <body>
-  <h1>Hidden Content Scanner</h1>
-  <!-- 過去のスキャン履歴表示用 -->
-  <div id="historyInfo">Loading previous scan info...</div>
-  <button id="startBtn">Start</button>
-  <button id="stopBtn">Stop</button>
-  <button id="resumeBtn">Resume</button>
-  <button id="clearLogBtn">Clear Log</button>
-  <button id="clearHistoryBtn">Clear History</button>
-  <label>
-    <input type="checkbox" id="detailedMode"> Detailed Mode
-  </label>
-  <div id="progress">Progress: 0%</div>
-  <textarea id="logBox" readonly></textarea>
+  <div class="app">
+    <div class="header">
+      <div>
+        <h1>Hidden Content Scanner</h1>
+        <p class="subtitle" id="originLabel">Loading...</p>
+      </div>
+      <span class="badge" id="statusBadge">Idle</span>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" id="tabScanBtn" data-tab="scan" role="tab" aria-selected="true">Scan</button>
+      <button class="tab" id="tabGuideBtn" data-tab="guide" role="tab" aria-selected="false">使い方</button>
+    </div>
+
+    <div id="tab-scan" class="tab-panel active" role="tabpanel">
+      <div class="panel">
+        <div class="row">
+          <label for="profileSelect">Scan profile</label>
+          <select id="profileSelect">
+            <option value="quick">Quick (root / 主要拡張子)</option>
+            <option value="standard" selected>Standard (root+current)</option>
+            <option value="full">Full (全辞書)</option>
+          </select>
+        </div>
+        <div class="row">
+          <label><input type="checkbox" id="detailedMode"> Detailed log</label>
+          <span id="targetCount"></span>
+        </div>
+        <div class="row">
+          <button class="primary" id="startBtn">Start</button>
+          <button id="resumeBtn">Resume</button>
+          <button class="danger" id="stopBtn">Stop</button>
+          <button id="clearLogBtn">Clear log</button>
+          <button id="clearHistoryBtn">Clear history</button>
+        </div>
+        <div id="progress">Progress: 0% (0/0)</div>
+      </div>
+
+      <div class="panel">
+        <strong>Found URLs</strong>
+        <div id="results" class="empty">No results yet.</div>
+      </div>
+
+      <div class="panel">
+        <strong>History</strong>
+        <div id="historyInfo" class="empty">Loading...</div>
+      </div>
+
+      <textarea id="logBox" readonly></textarea>
+    </div>
+
+    <div id="tab-guide" class="tab-panel" role="tabpanel">
+      <div class="panel guide">
+        <h2>概要</h2>
+        <p>
+          同一ドメイン上の隠しファイル・ディレクトリを辞書ベースで探索します。
+          旧 findhiddenpages と contentdiscovery を統合した v2 です。
+        </p>
+
+        <h2>基本的な使い方</h2>
+        <ol>
+          <li>探索したいサイトの HTTP(S) ページを開く</li>
+          <li>拡張機能アイコンから popup を開く</li>
+          <li>Scan profile を選び <strong>Start</strong> をクリック</li>
+          <li>ステータスが <strong>200 OK</strong> の URL が Found URLs に表示される</li>
+        </ol>
+
+        <h2>Scan profile</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Profile</th>
+              <th>対象</th>
+              <th>目安</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Quick</td>
+              <td>ルートのみ / 主要拡張子</td>
+              <td>~3,000 URL</td>
+            </tr>
+            <tr>
+              <td>Standard</td>
+              <td>ルート + 現在のディレクトリ</td>
+              <td>~33,000–65,000 URL</td>
+            </tr>
+            <tr>
+              <td>Full</td>
+              <td>全辞書・全拡張子</td>
+              <td>~56,000–113,000 URL</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>初めて使う場合は Quick または Standard から始めることをおすすめします。</p>
+
+        <h2>各ボタン</h2>
+        <ul>
+          <li><strong>Start</strong> — 新規スキャンを開始（進行中のスキャンは上書き）</li>
+          <li><strong>Resume</strong> — 中断したスキャンを再開</li>
+          <li><strong>Stop</strong> — スキャンを一時停止（進捗は保存されます）</li>
+          <li><strong>Detailed log</strong> — 404 など非 200 レスポンスもログに記録</li>
+          <li><strong>Clear history</strong> — 現在ドメインの履歴を削除</li>
+        </ul>
+
+        <h2>popup を閉じても大丈夫？</h2>
+        <p>
+          はい。スキャンは background で動作するため、popup を閉じても継続します。
+          再度 popup を開くと進捗が反映されます。
+        </p>
+
+        <h2>注意事項</h2>
+        <div class="note">
+          診断許可を得たサイト、または自分が管理するサイトにのみ使用してください。
+          大量リクエストはサーバー負荷や WAF ブロックの原因になります。
+        </div>
+      </div>
+    </div>
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>
