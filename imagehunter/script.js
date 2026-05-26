@@ -1,190 +1,289 @@
-let defaults = {
-  data: {
-    col1: 'no data',
-    imgs: []
+function toDecimal(value) {
+  if (value == null) return null;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'object' && value.numerator != null && value.denominator != null) {
+    return value.denominator === 0 ? null : value.numerator / value.denominator;
   }
-};
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
-let img_element;
-let img_cnt=0;
+function dmsToDecimal(dms, ref) {
+  if (!Array.isArray(dms) || dms.length < 3) return null;
+  const deg = toDecimal(dms[0]);
+  const min = toDecimal(dms[1]);
+  const sec = toDecimal(dms[2]);
+  if (deg == null || min == null || sec == null) return null;
 
-//DOMツリー構築終了時
-document.addEventListener("DOMContentLoaded", function () {
-  chrome.storage.local.get(defaults, function(items) {
-    //書き出し先タグ
-    const imgs = document.getElementById('imgs');
-    //storageから読み込んだデータを書き出し
-    items.data.imgs.forEach(function(img){
-      if(img.startsWith('http://') ||img.startsWith('https://')){
-        //spanの作成
-        let imgspan_element = document.createElement('span');
-        imgspan_element.setAttribute("class", "imagespan");
+  let decimal = deg + ((min * 60) + sec) / 3600;
+  if (ref === 'S' || ref === 'W') decimal *= -1;
+  return decimal;
+}
 
-        //画像へのリンク作成
-        let link_element = document.createElement('a');
-        link_element.href=img;
-        link_element.setAttribute("target", "_blank");
-        imgspan_element.appendChild(link_element);
+function createActionLink(href, id, className, label, iconSrc) {
+  const link = document.createElement('a');
+  link.href = href;
+  link.id = id;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.className = `action-btn ${className}`;
+  link.title = label;
 
-                //画像タグの作成
-        let img_element = document.createElement('img');
-        img_element.src = img; // 画像パス
-        img_element.setAttribute("id", "img_"+img_cnt);
-        img_element.setAttribute("height", "100");
-        img_element.setAttribute("width", "100");
-        img_element.setAttribute("title", img);
-        link_element.appendChild(img_element);
+  const icon = document.createElement('img');
+  icon.src = iconSrc;
+  icon.alt = label;
+  link.appendChild(icon);
+  return link;
+}
 
-        //検索span
-        let search_span_element = document.createElement('span');
-        imgspan_element.appendChild(search_span_element);
-        //Google画像検索へのリンク作成
-        const google_imgsearch_url=`https://www.google.co.jp/searchbyimage?image_url=${img}&site=search&hl=ja`;
-        
-        let google_imgsearch_element = document.createElement('a');
-        google_imgsearch_element.href =google_imgsearch_url;
-        google_imgsearch_element.setAttribute("id", "Google_"+img_element.id);
-        google_imgsearch_element.setAttribute("target", "_blank");          
-        google_imgsearch_element.setAttribute("alt", "Google");
-        google_imgsearch_element.setAttribute("class", "google_search_link");
-        //画像タグの作成
-        let google_img_element = document.createElement('img');
-        google_img_element.src = 'google.svg'; // 画像パス
-        google_img_element.setAttribute("height", "15");
-        google_img_element.setAttribute("width", "15");
-        google_imgsearch_element.appendChild(google_img_element);
+function createGpsLink(href, id) {
+  const link = document.createElement('a');
+  link.href = href;
+  link.id = id;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.className = 'action-btn gps';
+  link.title = 'Google Maps';
+  link.textContent = 'GPS';
+  return link;
+}
 
-        search_span_element.appendChild(google_imgsearch_element);
+function createCopyButton(imgUrl, id) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.id = id;
+  button.className = 'action-btn copy';
+  button.title = 'URLをコピー';
 
-        const bing_imgsearch_url=`https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIHMP&sbisrc=UrlPaste&q=imgurl:${img}`;
-        let bing_imgsearch_element = document.createElement('a');
-        bing_imgsearch_element.href =bing_imgsearch_url;
-        bing_imgsearch_element.setAttribute("id", "Bing_"+img_element.id);
-        bing_imgsearch_element.setAttribute("target", "_blank");          
-        bing_imgsearch_element.setAttribute("alt", "Bing");
-        bing_imgsearch_element.setAttribute("class", "bing_search_link");
-        //画像タグの作成
-        let bing_img_element = document.createElement('img');
-        bing_img_element.src = 'bing.svg'; // 画像パス
-        bing_img_element.setAttribute("height", "15");
-        bing_img_element.setAttribute("width", "15");
-        bing_imgsearch_element.appendChild(bing_img_element);
-        search_span_element.appendChild(bing_imgsearch_element);
+  const icon = document.createElement('img');
+  icon.src = 'link.png';
+  icon.alt = 'Copy';
+  button.appendChild(icon);
 
-        //Yandex
-        const yandex_imgsearch_url=`https://yandex.com/images/search?rpt=imageview&url=${img}`
-        let yandex_imgsearch_element = document.createElement('a');
-        yandex_imgsearch_element.href =yandex_imgsearch_url;
-        yandex_imgsearch_element.setAttribute("id", "Yandex_"+img_element.id);
-        yandex_imgsearch_element.setAttribute("target", "_blank");          
-        yandex_imgsearch_element.setAttribute("alt", "Yandex");
-        yandex_imgsearch_element.setAttribute("class", "yandex_search_link");
-        //画像タグの作成
-        let yandex_img_element = document.createElement('img');
-        yandex_img_element.src = 'yandex.png'; // 画像パス
-        yandex_img_element.setAttribute("height", "15");
-        yandex_img_element.setAttribute("width", "15");
-        yandex_imgsearch_element.appendChild(yandex_img_element);
+  button.addEventListener('click', async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(imgUrl);
+      button.classList.add('copied');
+      button.title = 'コピーしました';
+      setTimeout(() => {
+        button.classList.remove('copied');
+        button.title = 'URLをコピー';
+      }, 1500);
+    } catch {
+      button.title = 'コピー失敗';
+    }
+  });
 
-        search_span_element.appendChild(yandex_imgsearch_element);
-/*
-        //リンクをコピー
-        let linkcopy_element = document.createElement('a');
-        linkcopy_element.href =`javascript:navigator.clipboard.writeText('${img}')`;
-        linkcopy_element.setAttribute("id", "Linkcopy_"+img_element.id);     
-        linkcopy_element.setAttribute("alt", "Copy");
-        linkcopy_element.setAttribute("class", "copy_link");
-        //画像タグの作成
-        let linkcopy_img_element = document.createElement('img');
-        linkcopy_img_element.src = 'link.png'; // 画像パス
-        linkcopy_img_element.setAttribute("height", "15");
-        linkcopy_img_element.setAttribute("width", "15");
-        linkcopy_element.appendChild(linkcopy_img_element);
+  return button;
+}
 
-        search_span_element.appendChild(linkcopy_element);
-        */
-        //exif情報の取得と調査用の極小画像は表示しないようにする
-        img_element.onload = function(){
-          const width = img_element.naturalWidth;
-          const height = img_element.naturalHeight;
-          if (width>2 && height>2){
-            EXIF.getData(img_element, function() {
-              if(Object.keys(EXIF.getAllTags(this)).length === 0 && EXIF.getAllTags(this).constructor === Object){
-              console.log(`${img_element.id}:NO EXIF`);
-              return;
-              }else{
-              let make = EXIF.getTag(this, "Make");
-              let model = EXIF.getTag(this, "Model");
-              let GPSLatitude = EXIF.getTag(this,"GPSLatitude");
-              let GPSLongitude = EXIF.getTag(this,"GPSLongitude");
-              let XResolution = EXIF.getTag(this,"XResolution");
-              let YResolution = EXIF.getTag(this,"YResolution");
-              //GPS情報がある
-              if(GPSLatitude!==undefined && GPSLongitude!==undefined){
-                let exifLongRef = EXIF.getTag("GPSLongitudeRef");
-                let exifLatRef = EXIF.getTag("GPSLatitudeRef");
-                if (exifLatRef == "S") {
-                  var latitude = (GPSLatitude[0]*-1) + (( (GPSLatitude[1]*-60) + (GPSLatitude[2]*-1) ) / 3600);						
-                } else {
-                  var latitude = GPSLatitude[0] + (( (GPSLatitude[1]*60) + GPSLatitude[2] ) / 3600);
-                }
-                console.log(`latitude:${latitude}`);
+function appendImageCard(container, imgUrl, index) {
+  const card = document.createElement('article');
+  card.className = 'image-card';
 
-                if (exifLongRef == "W") {
-                  var longitude = (GPSLongitude[0]*-1) + (( (GPSLongitude[1]*-60) + (GPSLongitude[2]*-1) ) / 3600);						
-                } else {
-                  var longitude = GPSLongitude[0] + (( (GPSLongitude[1]*60) + GPSLongitude[2] ) / 3600);
-                }
-                console.log(`longitude:${longitude}`);
-                let mapsurl=`https://www.google.com/maps?q=${latitude},${longitude}`
-                console.log(`Google Maps:${mapsurl}`);
+  const thumbLink = document.createElement('a');
+  thumbLink.className = 'image-thumb';
+  thumbLink.href = imgUrl;
+  thumbLink.target = '_blank';
+  thumbLink.rel = 'noopener noreferrer';
+  card.appendChild(thumbLink);
 
-                var gps_element = document.createElement('a');
-                gps_element.href =mapsurl;
-                gps_element.setAttribute("id", "GPS_"+img_element.id);
-                gps_element.setAttribute("class", "GPSlink");
-                gps_element.setAttribute("target", "_blank");          
-                gps_element.textContent="GPS";
-                search_span_element.appendChild(gps_element);
-                console.log(`${img_element.id}:${make},${model},緯度:${latitude},経度:${longitude}`);
-                //https://www.google.com/maps?q=35.31966666666667,139.54766666666666
-              }else{
-                //デバッグ用に情報表示
-                /*
-                var gps_element = document.createElement('span');
-                gps_element.innerText =`${make},${model} NO GPS DATA` // 画像パス
-                gps_element.setAttribute("id", "GPS_"+img_element.id);
-                imgspan_element.appendChild(gps_element);
-                console.log(`${img_element.id}:${make},${model},${XResolution},${YResolution} NO GPS DATA`);
-                */
-              }
-              }
-            });
-            imgs.appendChild(imgspan_element);
-          }
-        };
-        //インスタとか貼れないけどURLは取れる奴は表示
-        img_element.onerror=function(){
-          imgs.appendChild(imgspan_element);
+  const imgEl = document.createElement('img');
+  imgEl.src = imgUrl;
+  imgEl.id = `img_${index}`;
+  imgEl.title = imgUrl;
+  thumbLink.appendChild(imgEl);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'image-overlay';
+  card.appendChild(overlay);
+
+  const exifInfo = document.createElement('div');
+  exifInfo.className = 'exif-info';
+  overlay.appendChild(exifInfo);
+
+  const actionRow = document.createElement('div');
+  actionRow.className = 'action-row';
+  overlay.appendChild(actionRow);
+
+  const encodedUrl = encodeURIComponent(imgUrl);
+  actionRow.appendChild(createCopyButton(imgUrl, `Copy_${imgEl.id}`));
+  actionRow.appendChild(createActionLink(
+    `https://www.google.co.jp/searchbyimage?image_url=${encodedUrl}&site=search&hl=ja`,
+    `Google_${imgEl.id}`,
+    'google',
+    'Google',
+    'google.svg',
+  ));
+  actionRow.appendChild(createActionLink(
+    `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIHMP&sbisrc=UrlPaste&q=imgurl:${encodedUrl}`,
+    `Bing_${imgEl.id}`,
+    'bing',
+    'Bing',
+    'bing.svg',
+  ));
+  actionRow.appendChild(createActionLink(
+    `https://yandex.com/images/search?rpt=imageview&url=${encodedUrl}`,
+    `Yandex_${imgEl.id}`,
+    'yandex',
+    'Yandex',
+    'yandex.svg',
+  ));
+
+  container.appendChild(card);
+
+  function applyExif(imgNode) {
+    EXIF.getData(imgNode, function onExifLoaded() {
+      const tags = EXIF.getAllTags(this);
+      if (!tags || Object.keys(tags).length === 0) {
+        exifInfo.textContent = 'EXIF なし';
+        return;
+      }
+
+      const make = EXIF.getTag(this, 'Make');
+      const model = EXIF.getTag(this, 'Model');
+      if (make || model) {
+        exifInfo.textContent = [make, model].filter(Boolean).join(' ');
+      }
+
+      const gpsLat = EXIF.getTag(this, 'GPSLatitude');
+      const gpsLng = EXIF.getTag(this, 'GPSLongitude');
+      if (gpsLat !== undefined && gpsLng !== undefined) {
+        const latRef = EXIF.getTag(this, 'GPSLatitudeRef');
+        const lngRef = EXIF.getTag(this, 'GPSLongitudeRef');
+        const latitude = dmsToDecimal(gpsLat, latRef);
+        const longitude = dmsToDecimal(gpsLng, lngRef);
+
+        if (latitude != null && longitude != null) {
+          actionRow.appendChild(createGpsLink(
+            `https://www.google.com/maps?q=${latitude},${longitude}`,
+            `GPS_${imgEl.id}`,
+          ));
         }
-        img_cnt++;
+      }
+    });
+  }
+
+  function handleLoad() {
+    const width = imgEl.naturalWidth;
+    const height = imgEl.naturalHeight;
+    if (width <= 2 && height <= 2) {
+      card.remove();
+      return;
+    }
+    applyExif(imgEl);
+  }
+
+  imgEl.onload = handleLoad;
+  imgEl.onerror = () => {
+    exifInfo.textContent = '読み込み不可';
+  };
+
+  if (imgEl.complete) {
+    if (imgEl.naturalWidth > 0) handleLoad();
+    else imgEl.onerror();
+  }
+}
+
+function showLoadingState(container) {
+  container.className = '';
+  container.innerHTML = `
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+        <polyline points="21 3 21 9 15 9"/>
+      </svg>
+      <p>スキャン中...</p>
+    </div>
+  `;
+}
+
+function renderEmptyState(container) {
+  container.className = '';
+  container.innerHTML = `
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <path d="M21 15l-5-5L5 21"/>
+      </svg>
+      <p>画像が見つかりません</p>
+      <small>ページを読み込むか、↻ で再スキャンしてください</small>
+    </div>
+  `;
+}
+
+function renderImages(tabData) {
+  const container = document.getElementById('imgs');
+  const siteInfo = document.getElementById('siteInfo');
+  const captionCount = document.getElementById('captionCount');
+  container.innerHTML = '';
+
+  const imgs = (tabData.imgs || []).filter((url) => url.startsWith('http://') || url.startsWith('https://'));
+
+  if (siteInfo) {
+    const url = tabData.siteUrl || '';
+    try {
+      siteInfo.textContent = url ? new URL(url).hostname : 'スキャン待ち';
+    } catch {
+      siteInfo.textContent = url || 'スキャン待ち';
+    }
+    siteInfo.title = url;
+  }
+
+  if (captionCount) {
+    captionCount.textContent = imgs.length > 0 ? String(imgs.length) : '';
+  }
+
+  if (imgs.length === 0) {
+    renderEmptyState(container);
+    return;
+  }
+
+  container.className = 'grid';
+  imgs.forEach((imgUrl, index) => {
+    appendImageCard(container, imgUrl, index);
+  });
+}
+
+function loadImagesForActiveTab(options = {}) {
+  const { autoScan = true } = options;
+  const container = document.getElementById('imgs');
+  if (container) showLoadingState(container);
+
+  chrome.runtime.sendMessage({ type: autoScan ? 'GET_OR_SCAN' : 'GET_TAB_IMAGES' }, (response) => {
+    if (chrome.runtime.lastError) return;
+    renderImages(response || { imgs: [], siteUrl: '' });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadImagesForActiveTab({ autoScan: true });
+
+  const reloadButton = document.getElementById('reload');
+  reloadButton?.addEventListener('click', () => {
+    reloadButton.disabled = true;
+    chrome.runtime.sendMessage({ type: 'RESCAN' }, (response) => {
+      reloadButton.disabled = false;
+      if (response?.data) {
+        renderImages(response.data);
+      } else {
+        loadImagesForActiveTab({ autoScan: false });
       }
     });
   });
-  //ボタンクリック
-  const button = document.getElementById("reload");
-  button.addEventListener("click", function () {
-    chrome.runtime.sendMessage({reload: "go"});
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0]?.id;
+      if (tabId == null) return;
+      const key = `tabImages_${tabId}`;
+      if (changes[key]) {
+        renderImages(changes[key].newValue || { imgs: [], siteUrl: '' });
+      }
+    });
   });
-  // イベントハンドラーをセットする  
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse)=> {
-	  if (message!= null) {
-      location.reload();
-	  }
-  });
-
-
-
-
 });
-

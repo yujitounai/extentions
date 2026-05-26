@@ -4,8 +4,8 @@
       "default_popup": "popup.html"
   },
   "manifest_version": 3,
-  "version": "0.1.5",
-  "description": "サイトの画像の実際のURLを探すよ",
+  "version": "0.2.3",
+  "description": "ページ内の画像URLを収集し、逆画像検索・EXIF/GPS解析を行います",
   "permissions": [
     "tabs",
     "scripting",
@@ -14,9 +14,11 @@
   "host_permissions": [
     "*://*/"
   ],
-  "icons": { "16": "icon.png",
-           "48": "icon.png",
-          "128": "icon.png" },
+  "icons": {
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  },
   "background": {
     "service_worker": "background.js"
   }
