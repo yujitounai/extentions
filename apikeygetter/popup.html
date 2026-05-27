@@ -1,48 +1,248 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-<meta charset="utf-8">
-<title>declarativeNetRequest Option</title>
-<style>
-body{
-    width: 400px;
-    color: #050505;
-    background:darkorange;
-    font:12px/18px monospace;
-    overflow:auto;
-    border-radius:8px;
-   
-}
-h1{
-    color: #fff;
-    font-weight: 900;
-    font-size:24px;
-    font-family: 'Open Sans', sans-serif;
-}
-
-.caption{
-    background:cornflowerblue;
-    padding: 5px;
-    border-radius:8px 8px 0px 0px;
-    word-wrap: break-word;
-}
-.box{
-    background:rgb(250, 242, 232);
-    border: solid 1px #ccc;
-    padding: 10px;
-    word-wrap: break-word;
-}
-</style>
+  <meta charset="utf-8">
+  <title>Secret Scanner</title>
+  <style>
+    :root {
+      --bg: #0f1218;
+      --surface: #181c24;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #eef1f6;
+      --muted: #8b95a8;
+      --accent: #f59e0b;
+      --accent-soft: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --highlight: #fde047;
+    }
+    * { box-sizing: border-box; }
+    body {
+      width: 420px;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .app { padding: 14px; }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    h1 { margin: 0; font-size: 16px; font-weight: 600; }
+    .subtitle {
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: var(--muted);
+      word-break: break-all;
+    }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      padding: 3px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 7px;
+      padding: 7px 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .tab.active {
+      background: var(--accent-soft);
+      color: #fcd34d;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    button {
+      border: 1px solid var(--border);
+      background: #11151c;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font: inherit;
+    }
+    button.primary {
+      background: var(--accent-soft);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #fcd34d;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #fcd34d;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge.alert {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+    }
+    .badge.muted {
+      background: rgba(100, 116, 139, 0.2);
+      color: #94a3b8;
+    }
+    .empty, .loading, .skipped {
+      color: var(--muted);
+      font-size: 12px;
+      padding: 8px 0;
+    }
+    .results-list, .asset-list {
+      max-height: 320px;
+      overflow: auto;
+    }
+    .result-item {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-item:last-child { border-bottom: none; }
+    .result-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .result-meta {
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .result-text {
+      font-size: 11px;
+      word-break: break-all;
+      font-family: ui-monospace, monospace;
+    }
+    .highlight {
+      background: rgba(253, 224, 71, 0.25);
+      color: #fef08a;
+      padding: 0 2px;
+      border-radius: 3px;
+    }
+    .asset-list a {
+      color: #fcd34d;
+      display: block;
+      word-break: break-all;
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+    .guide {
+      max-height: 380px;
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .guide h2 {
+      margin: 0 0 8px;
+      font-size: 13px;
+    }
+    .guide h2:not(:first-child) { margin-top: 16px; }
+    .guide p, .guide li { color: var(--muted); }
+    .guide ul { margin: 0; padding-left: 18px; }
+    .guide .note {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #fecaca;
+      font-size: 11px;
+    }
+  </style>
 </head>
 <body>
-<h1>API key finder</h1>   
-<div class="caption">見つかったAPIキーなど</div>
+  <div class="app">
+    <div class="header">
+      <div>
+        <h1>Secret Scanner</h1>
+        <p class="subtitle" id="originLabel">Loading...</p>
+      </div>
+      <span class="badge" id="statusBadge">Idle</span>
+    </div>
 
-<div id="apikeys" class="box"></div>
-<div class="caption">iframe一覧</div>
-<div id="iframes" class="box"></div>
-<div class="caption">script一覧</div>
-<div id="scripts" class="box"></div>
-<script src="popup.js"></script>
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="results" role="tab">検出結果</button>
+      <button class="tab" data-tab="assets" role="tab">アセット</button>
+      <button class="tab" data-tab="guide" role="tab">使い方</button>
+    </div>
+
+    <div id="tab-results" class="tab-panel active" role="tabpanel">
+      <div class="row">
+        <button class="primary" id="rescanBtn">Rescan</button>
+        <span id="resultCount" class="empty"></span>
+      </div>
+      <div class="panel">
+        <div id="results" class="results-list loading">読み込み中...</div>
+      </div>
+    </div>
+
+    <div id="tab-assets" class="tab-panel" role="tabpanel">
+      <div class="panel">
+        <strong>iframe 一覧</strong>
+        <div id="iframes" class="asset-list empty">なし</div>
+      </div>
+      <div class="panel">
+        <strong>script 一覧</strong>
+        <div id="scripts" class="asset-list empty">なし</div>
+      </div>
+    </div>
+
+    <div id="tab-guide" class="tab-panel" role="tabpanel">
+      <div class="panel guide">
+        <h2>概要</h2>
+        <p>
+          ページ内テキスト・インライン/外部 JavaScript から API キー、トークン、
+          秘密情報らしき文字列を自動検出します。旧 API Key Getter と Hidden Search を統合した v1 です。
+        </p>
+
+        <h2>検出パターン（13種）</h2>
+        <ul>
+          <li>AWS アクセスキー / Credentials</li>
+          <li>Google API キー、Slack Token、JWT</li>
+          <li>Private Key、GitHub Token、UUID など</li>
+        </ul>
+
+        <h2>バッジとアイコン</h2>
+        <p>
+          検出件数が拡張アイコンのバッジに表示されます。1件以上でアラートアイコンに切り替わります。
+          除外ドメイン（Google、Amazon 等）ではスキャンしません。
+        </p>
+
+        <h2>Rescan</h2>
+        <p>動的に読み込まれたコンテンツを再スキャンしたい場合に使用します。</p>
+
+        <h2>注意事項</h2>
+        <div class="note">
+          診断許可を得たサイト、または自分が管理するサイトにのみ使用してください。
+          外部 script の fetch は CORS 制約により取得できない場合があります。
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
 </body>
 </html>

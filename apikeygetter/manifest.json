@@ -1,11 +1,8 @@
 {
-  "name": "API Key Getter",
-  "action": {
-      "default_popup": "popup.html"
-  },
   "manifest_version": 3,
-  "version": "0.2",
-  "description": "htmlとコードからAPIキーとかを探すよ",
+  "name": "Secret Scanner",
+  "version": "1.0.4",
+  "description": "ページ内テキストと JavaScript から API キー・トークン等の秘密情報候補を自動検出します。",
   "permissions": [
     "tabs",
     "activeTab",
@@ -13,13 +10,30 @@
     "storage"
   ],
   "host_permissions": [
-    "*://*/"
+    "*://*/*"
   ],
-
-  "icons": { "16": "icon.png",
-           "48": "icon.png",
-          "128": "icon.png" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Secret Scanner",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "images/icon16.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["patterns.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }

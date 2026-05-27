@@ -1,32 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Hidden Search",
-  "version": "1.0",
-  "description": "ページ内の特定の文字列を検索する拡張機能",
-  "permissions": [
-    "activeTab",
-    "scripting"
-  ],
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "/images/icon16.png",
-      "48": "/images/icon48.png",
-      "128": "/images/icon128.png"
-    }
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
-    }
-  ],
+  "name": "Hidden Search (deprecated)",
+  "version": "1.1.0",
+  "description": "apikeygetter (Secret Scanner v1) に統合済み。新規利用は apikeygetter を使用してください。",
+  "permissions": ["activeTab"],
+  "action": {},
   "background": {
     "service_worker": "background.js"
-  },
-  "icons": {
-    "16": "/images/icon16.png",
-    "48": "/images/icon48.png",
-    "128": "/images/icon128.png"
   }
-} 
+}
