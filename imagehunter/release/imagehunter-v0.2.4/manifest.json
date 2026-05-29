@@ -1,0 +1,25 @@
+{
+  "name": "Image hunter",
+  "action": {
+      "default_popup": "popup.html"
+  },
+  "manifest_version": 3,
+  "version": "0.2.4",
+  "description": "ページ内の画像URLを収集し、逆画像検索・EXIF/GPS解析を行います",
+  "permissions": [
+    "tabs",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*/"
+  ],
+  "icons": {
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

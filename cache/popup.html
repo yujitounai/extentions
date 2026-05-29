@@ -1,40 +1,210 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>Resources Popup</title>
+  <meta charset="UTF-8">
+  <title>Resource Counter</title>
+  <style>
+    :root {
+      --bg: #0f1218;
+      --surface: #181c24;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #eef1f6;
+      --muted: #8b95a8;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59, 130, 246, 0.15);
+      --danger: #ef4444;
+      --warn: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      width: 440px;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .app { padding: 14px; }
+    .header { margin-bottom: 10px; }
+    h1 { margin: 0; font-size: 16px; font-weight: 600; }
+    .subtitle { margin: 4px 0 0; font-size: 11px; color: var(--muted); word-break: break-all; }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      padding: 3px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 7px;
+      padding: 7px 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .tab.active { background: var(--accent-soft); color: #93c5fd; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .panel h2 { margin: 0 0 8px; font-size: 12px; font-weight: 600; }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      resize: vertical;
+      background: #11151c;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      font: 11px/1.4 ui-monospace, monospace;
+    }
+    .link-list {
+      max-height: 120px;
+      overflow: auto;
+      font-size: 11px;
+    }
+    .link-list a {
+      color: #93c5fd;
+      display: block;
+      word-break: break-all;
+      margin-bottom: 4px;
+    }
+    .empty { color: var(--muted); font-size: 12px; }
+    .alert {
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+    .alert.warn {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #fcd34d;
+    }
+    .alert.hit {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #fecaca;
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    button {
+      border: 1px solid var(--border);
+      background: #11151c;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 11px;
+    }
+    button.primary {
+      background: var(--accent-soft);
+      border-color: rgba(59, 130, 246, 0.35);
+      color: #93c5fd;
+    }
+    button.danger {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #fecaca;
+    }
+    .finding { font-size: 11px; margin-bottom: 6px; word-break: break-all; }
+    .guide { font-size: 12px; color: var(--muted); line-height: 1.6; max-height: 360px; overflow: auto; }
+    .guide h2 { color: var(--text); font-size: 13px; margin: 12px 0 6px; }
+    .guide h2:first-child { margin-top: 0; }
+  </style>
 </head>
 <body>
-    <textarea id="resourceList" rows="5" cols="50"></textarea>
-    <textarea id="jsHeaders" rows="5" cols="50"></textarea>
-    <p id="keywordResults"></p>
+  <div class="app">
+    <div class="header">
+      <h1>Resource Counter</h1>
+      <p class="subtitle" id="originLabel">Loading...</p>
+    </div>
 
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="resources">Resources</button>
+      <button class="tab" data-tab="scans">Scans</button>
+      <button class="tab" data-tab="headers">Headers</button>
+      <button class="tab" data-tab="tools">Tools</button>
+      <button class="tab" data-tab="guide">使い方</button>
+    </div>
 
+    <div id="tab-resources" class="tab-panel active">
+      <div class="panel">
+        <h2>ページリソース</h2>
+        <textarea id="resourceList" readonly placeholder="スキャン中..."></textarea>
+      </div>
+    </div>
 
-    <!-- URLを表示する要素 -->
-    <p id="xForwardedHostFoundLine"></p>
-    <!-- URLを表示する要素 -->
-    <p id="xForwardedForFoundLine"></p>
-    <!-- URLを表示する要素 -->
-    <p id="xOthersFoundLine"></p>
-    <!-- staticscanで見つかったURLを表示する要素 -->
-    [StaticScan]
-    <p id="staticscan"></p>
-    <!-- jsscanで見つかったURLを表示する要素 -->
-    [JavaScript]
-    <p id="jsscan"></p>
-    [正規表現]
-    <p id="regexscan"></p>
-    [怪しい正規表現]
-    <p id="suspicious"></p>
-    [prototypepollution]
-    <p id="prototypepollution"></p>
-    <p id="userInputScan"></p>
-    <button id="loadJs">Load JS Headers</button><br>
-    <button id="jQuery171">jQ172 ReDoS</button>
-    <button id="jQuery183">jQ183 ReDoS</button>
-    <button id="XSLeak">XS-Leak</button>
-    <button id="pp">pp</button>
-    <script src="popup.js"></script>
+    <div id="tab-scans" class="tab-panel">
+      <div class="panel">
+        <h2>StaticScan (S3)</h2>
+        <div id="staticscan" class="link-list empty">なし</div>
+      </div>
+      <div class="panel">
+        <h2>脆弱 JS パス</h2>
+        <div id="jsscan" class="link-list empty">なし</div>
+      </div>
+      <div class="panel">
+        <h2>正規表現 (JS)</h2>
+        <div id="regexscan" class="link-list empty">なし</div>
+      </div>
+      <div class="panel">
+        <h2>怪しい正規表現</h2>
+        <div id="suspicious" class="link-list empty">なし</div>
+      </div>
+      <div class="panel">
+        <h2>キーワード検索</h2>
+        <div id="keywordResults" class="link-list empty">なし</div>
+      </div>
+    </div>
+
+    <div id="tab-headers" class="tab-panel">
+      <div class="panel">
+        <div class="alert warn">診断許可のあるサイトのみ実行してください。同一オリジンへ多数のリクエストを送ります。</div>
+        <div class="row">
+          <button class="primary" id="loadJs">Load JS Headers</button>
+        </div>
+        <div id="reflectionFindings"></div>
+        <textarea id="jsHeaders" readonly placeholder="結果はここに表示されます"></textarea>
+      </div>
+    </div>
+
+    <div id="tab-tools" class="tab-panel">
+      <div class="panel">
+        <div class="alert warn">PoC 用。ブラウザが重くなる場合があります。自己責任で実行してください。</div>
+        <div class="row">
+          <button class="danger" id="jQuery171">jQ1.7.2 ReDoS</button>
+          <button class="danger" id="jQuery183">jQ1.8.3 ReDoS</button>
+          <button class="danger" id="XSLeak">XS-Leak</button>
+          <button class="danger" id="pp">Prototype pollution</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-guide" class="tab-panel">
+      <div class="panel guide">
+        <h2>概要</h2>
+        <p>ページ上の CSS / JS / 画像を列挙し、キャッシュヘッダ・S3・脆弱ライブラリ・正規表現・ヘッダ反射などを調べる診断用拡張です。</p>
+        <h2>バッジ</h2>
+        <p>ページ読み込み後、同一オリジンのリソースにキャッシュヘッダがあれば <strong>cache</strong> と表示されます。</p>
+        <h2>Headers タブ</h2>
+        <p>偽装 X-Forwarded 系ヘッダを付けてリソースを再取得し、レスポンス body への反射を確認します。</p>
+        <h2>Tools タブ</h2>
+        <p>既知の ReDoS / XS-Leak / prototype pollution 用 URL フラグメントを新タブで開きます。</p>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
 </body>
 </html>

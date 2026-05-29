@@ -6,7 +6,7 @@ const AVOID_DOMAINS = [
   'facebook.com',
   'youtube.com',
   'google.com',
-  'twitter.com',
+  'x.com',
   'yahoo.co.jp',
 ];
 
@@ -24,6 +24,9 @@ const SECRET_PATTERNS = [
   { id: 'github_token', name: 'GitHub Access Token', regex: /[a-zA-Z0-9_-]*:[a-zA-Z0-9_\-]+@github\.com/g },
   { id: 'jwt', name: 'JSON Web Token', regex: /ey[A-Za-z0-9-_=]+\.ey[A-Za-z0-9-_=]+\.[A-Za-z0-9-_.+/=]+/g },
   { id: 'yahoo_client_id', name: 'Yahoo! JAPAN Client ID', regex: /dj0[A-Za-z0-9]{52}-/g },
+  { id: 'stripe_api_key', name: 'Stripe API Key', regex: /sk_(?:live|test|rk_live)_[0-9a-zA-Z]{24,}/g },
+  { id: 'sendgrid_api_key', name: 'SendGrid API Key', regex: /SG\.[0-9A-Za-z_-]{22}\.[0-9A-Za-z_-]{43}/g },
+  { id: 'openai_api_key', name: 'OpenAI API Key', regex: /sk-(?:proj-[a-zA-Z0-9_-]{40,}|[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20})/g },
 ];
 
 function shouldSkipDomain(hostname) {

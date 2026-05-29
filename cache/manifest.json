@@ -1,10 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Resource Counter",
-  "version": "1.0",
+  "version": "2.0.2",
+  "description": "ページリソースの列挙、キャッシュヘッダ検出、ヘッダ反射・脆弱JS/正規表現スキャンなどの診断支援",
   "action": {
     "default_popup": "popup.html",
+    "default_title": "Resource Counter",
     "default_icon": {
+      "16": "icon-16.png",
       "48": "icon-48.png",
       "128": "icon-128.png"
     }
@@ -21,6 +24,7 @@
     "service_worker": "background.js"
   },
   "icons": {
+    "16": "icon-16.png",
     "48": "icon-48.png",
     "128": "icon-128.png"
   }

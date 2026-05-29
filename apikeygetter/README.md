@@ -5,7 +5,7 @@
 
 ## 機能
 
-- 13 種類の正規表現パターン（AWS、Google API、Slack、JWT、Private Key 等）
+- 16 種類の正規表現パターン（AWS、Google API、Stripe、OpenAI、Slack、JWT、Private Key 等）
 - Content script による DOM / インライン script スキャン
 - Background による外部 script fetch スキャン
 - MutationObserver で動的コンテンツにも対応

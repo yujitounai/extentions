@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Image Hunter</title>
+<style>
+  :root {
+    --bg: #0f1218;
+    --surface: #181c24;
+    --surface-hover: #1e2430;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #eef1f6;
+    --text-muted: #8b95a8;
+    --accent: #14b8a6;
+    --accent-soft: rgba(20, 184, 166, 0.14);
+    --danger: #ef4444;
+    --danger-soft: rgba(239, 68, 68, 0.15);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    width: 420px;
+    min-height: 200px;
+    max-height: 580px;
+    margin: 0;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 580px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .header-title {
+    min-width: 0;
+  }
+
+  .header-title h1 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .header-title p {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 260px;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .count-badge:empty {
+    display: none;
+  }
+
+  .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-hover);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+  }
+
+  .btn-icon:hover:not(:disabled) {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.16);
+    background: #252b38;
+  }
+
+  .btn-icon:disabled {
+    opacity: 0.45;
+    cursor: wait;
+  }
+
+  .btn-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Content */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+  }
+
+  .content::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  /* Image card */
+  .image-card {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  }
+
+  .image-card:hover {
+    border-color: rgba(20, 184, 166, 0.35);
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+  }
+
+  .image-thumb {
+    display: block;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: #0a0c10;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .image-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.2s;
+  }
+
+  .image-card:hover .image-thumb img {
+    transform: scale(1.04);
+  }
+
+  .image-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 8px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.2) 55%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+  }
+
+  .image-card:hover .image-overlay {
+    opacity: 1;
+  }
+
+  .action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    pointer-events: auto;
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(4px);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+
+  .action-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .action-btn img {
+    width: 14px;
+    height: 14px;
+    display: block;
+  }
+
+  .action-btn.gps {
+    width: auto;
+    padding: 0 8px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--danger-soft);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+  }
+
+  .action-btn.gps:hover {
+    background: rgba(239, 68, 68, 0.35);
+  }
+
+  .action-btn.copied {
+    background: var(--accent-soft);
+  }
+
+  .exif-info {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 15px;
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .empty-state svg {
+    width: 40px;
+    height: 40px;
+    opacity: 0.35;
+  }
+
+  .empty-state p {
+    margin: 0;
+    font-size: 13px;
+  }
+
+  .empty-state small {
+    font-size: 11px;
+    opacity: 0.7;
+  }
+</style>
+<script src="exif.js"></script>
+<script src="script.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-left">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
+        </div>
+        <div class="header-title">
+          <h1>Image Hunter</h1>
+          <p id="siteInfo" title=""></p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="count-badge" id="captionCount"></span>
+        <button type="button" class="btn-icon" id="reload" title="再スキャン">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+            <polyline points="21 3 21 9 15 9"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+    <main class="content">
+      <div id="imgs" class="grid"></div>
+    </main>
+  </div>
+</body>
+</html>

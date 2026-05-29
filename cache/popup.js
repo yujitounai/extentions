@@ -1,438 +1,398 @@
-document.addEventListener('DOMContentLoaded', function () {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        const activeTab = tabs[0];
-        const activeTabDomain = new URL(activeTab.url).hostname;
+const EXCLUDE_JS_DOMAINS = [
+  'www.gstatic.com',
+  'pagead2.googlesyndication.com',
+  'platform.twitter.com',
+];
 
-        chrome.scripting.executeScript({
-            target: { tabId: activeTab.id },
-            function: listResources,
-            args: [activeTabDomain]
-        }, (results) => {
-            if (results && results[0]) {
-                document.getElementById('resourceList').value = formatResourceList(results[0].result);
-                const staticscanElement = document.getElementById('staticscan');
-                const urlList = formatResourceList(results[0].result);
-                //S3バケットを探す
-                const awsUrls = urlList[1].filter(url => {
-                    try {
-                        const hostname = new URL(url).hostname;
-                        return hostname.endsWith('amazonaws.com') || hostname.includes('.s3.amazonaws.com');
-                    } catch (error) {
-                        return false;
-                    }
-                });
+const VULNERABLE_JS_PATHS = [
+  '/purl.js',
+  '/jquery.query.js',
+  '/jquery.query-object.js',
+  '/pdf.js',
+  '/lodash.js',
+  'lodash.min.js',
+  'jquery-1.7.2.',
+];
 
-                staticscanElement.innerHTML = awsUrls.map(url => `<a href="${url}" target="_blank">${url}</a>`).join('<br>');
+const KEYWORDS = [
+  'URLSearchParams',
+  'decodeURI',
+  'location',
+  'Ziggy',
+  'jsRoutes',
+  'Object.prototype',
+  'eval(',
+  'innerHTML',
+  '.html(',
+];
 
-                const jsscanElement = document.getElementById('jsscan');
-                const allurlList = Array.from(new Set(urlList[0].concat(urlList[1])));
-                // .cssファイルを除外するフィルタリング
-                const jsUrlList = allurlList.filter(url => !url.endsWith('.css'));
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
-                const vulnerablePaths = [
-                    '/purl.js',
-                    '/jquery.query.js',
-                    '/jquery.query-object.js',
-                    '/pdf.js',
-                    '/lodash.js',
-                    'lodash.min.js',
-                    'jquery-1.7.2.'
-                ];
+function renderLinkList(elementId, urls) {
+  const el = document.getElementById(elementId);
+  if (!urls?.length) {
+    el.className = 'link-list empty';
+    el.textContent = 'なし';
+    return;
+  }
+  el.className = 'link-list';
+  el.innerHTML = urls
+    .map((url) => {
+      const safe = escapeHtml(url);
+      return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${safe}</a>`;
+    })
+    .join('');
+}
 
-                const isVulnerable = (url) => {
-                    return vulnerablePaths.some(path => url.includes(path));
-                };
+function renderKeywordResults(items) {
+  const el = document.getElementById('keywordResults');
+  if (!items?.length) {
+    el.className = 'link-list empty';
+    el.textContent = 'なし';
+    return;
+  }
+  el.className = 'link-list';
+  el.innerHTML = items
+    .map((item) => {
+      const safeUrl = escapeHtml(item.url);
+      const kws = escapeHtml(item.foundKeywords.join(', '));
+      return `<div><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>: ${kws}</div>`;
+    })
+    .join('');
+}
 
-                const vulnjsUrls = allurlList.filter(url => {
-                    try {
-                        return isVulnerable(url);
-                    } catch (error) {
-                        return false;
-                    }
-                });
-                jsscanElement.innerHTML = vulnjsUrls.map(url => `<a href="${url}" target="_blank">${url}</a>`).join('<br>');
-
-                const regexScanElement = document.getElementById('regexscan');
-                const suspiciousElement = document.getElementById('suspicious');
-                const excludeDomains = [
-                    'www.gstatic.com',
-                    'pagead2.googlesyndication.com',
-                    'platform.twitter.com'
-                ];
-                const regexUrls = allurlList.filter(url => {
-                    try {
-                        const hostname = new URL(url).hostname;
-                        return url.endsWith('.js') && !excludeDomains.some(domain => hostname.endsWith(domain));
-                    } catch (error) {
-                        return false;
-                    }
-                });
-                chrome.scripting.executeScript({
-                    target: { tabId: activeTab.id },
-                    function: checkForRegex,
-                    args: [regexUrls]
-                }, (regexResults) => {
-                    if (regexResults && regexResults[0] && regexResults[0].result) {
-                        const regexUrls = regexResults[0].result.regexUrls || [];
-                        const suspiciousUrls = regexResults[0].result.suspiciousUrls || [];
-                        regexScanElement.innerHTML = regexUrls.map(url => `<a href="${url}" target="_blank">${url}</a>`).join('<br>');
-                        suspiciousElement.innerHTML = suspiciousUrls.map(url => `<a href="${url}" target="_blank">${url}</a>`).join('<br>');
-                    } else {
-                        regexScanElement.innerHTML = '';
-                        suspiciousElement.innerHTML = '';
-                    }
-                });
-
-                // キーワード検索
-                const keywords = ['URLSearchParams', 'decodeURI', 'location', 'Ziggy', 'jsRoutes', 'Object.prototype', 'eval(', 'innerHTML','.html(']; // Replace with your list of keywords
-
-                // 検索対象のURLリストを準備
-                const keywordUrls = allurlList.filter(url => {
-                    try {
-                        const hostname = new URL(url).hostname;
-                        return url.endsWith('.js') && !excludeDomains.some(domain => hostname.endsWith(domain));
-                    } catch (error) {
-                        return false;
-                    }
-                });
-
-                chrome.scripting.executeScript({
-                    target: { tabId: activeTab.id },
-                    function: searchForKeywords,
-                    args: [keywordUrls, keywords]
-                }, (results) => {
-                    if (results && results[0] && results[0].result) {
-                        const keywordResults = results[0].result;
-                        const keywordResultsElement = document.getElementById('keywordResults');
-                        if (keywordResults.length > 0) {
-                            keywordResultsElement.innerHTML = keywordResults.map(item => `<a href="${item.url}" target="_blank">${item.url}</a>: ${item.foundKeywords.join(', ')}`).join('<br>');
-                        } else {
-                            keywordResultsElement.innerHTML = 'No keywords found.';
-                        }
-                    }
-                });
-
-            }
-        });
+function initTabs() {
+  document.querySelectorAll('.tab').forEach((button) => {
+    button.addEventListener('click', () => {
+      const name = button.dataset.tab;
+      document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+      document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('active', p.id === `tab-${name}`));
     });
+  });
+}
 
-    const loadJsButton = document.getElementById('loadJs');
-    if (loadJsButton) {
-        loadJsButton.addEventListener('click', function () {
-            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                const activeTab = tabs[0];
-                const activeTabDomain = new URL(activeTab.url).hostname;
+async function getActiveTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.url?.startsWith('http')) return null;
+  let hostname = '';
+  try {
+    hostname = new URL(tab.url).hostname;
+  } catch {
+    return null;
+  }
+  return { tab, hostname };
+}
 
-                chrome.scripting.executeScript({
-                    target: { tabId: activeTab.id },
-                    function: loadJavaScriptAndCssAndImageHeaders,
-                    args: [activeTabDomain]
-                }, (results) => {
-                    if (results && results[0]) {
-                        const jsHeaders = results[0].result;
-                        document.getElementById('jsHeaders').value = jsHeaders;
+function runScan(tabId, hostname) {
+  chrome.scripting.executeScript(
+    {
+      target: { tabId },
+      func: listResources,
+      args: [hostname],
+    },
+    (results) => {
+      if (!results?.[0]?.result) {
+        document.getElementById('resourceList').value = 'リソースを取得できませんでした';
+        return;
+      }
 
-                        // X-Forwarded-Host Found in Body を含む行を検索
-                        const lines = jsHeaders.split('\n');
-                        const xForwardedHostFoundLine = lines.find(line => line.includes('X-Forwarded-Host Found in Body:'));
-                        const xForwardedForFoundLine = lines.find(line => line.includes('X-Forwarded-For Found in Body:'));
-                        const xOthersFoundLine = lines.find(line => line.includes('X-Others Found in Body:'));
-                        const DoSLine = lines.find(line => line.includes('Status: 404 Not Found'));
+      const data = results[0].result;
+      document.getElementById('resourceList').value = formatResourceList(data);
 
-                        if (xForwardedHostFoundLine) {
-                            // X-Forwarded-Host Found in Body を含む行が見つかった場合、表示する
-                            const urlTextElement = document.getElementById('xForwardedHostFoundLine');
-                            urlTextElement.innerHTML = xForwardedHostFoundLine;
-                        }
-                        if (xForwardedForFoundLine) {
-                            // X-Forwarded-For Found in Body を含む行が見つかった場合、表示する
-                            const urlTextElement = document.getElementById('xForwardedForFoundLine');
-                            urlTextElement.innerHTML = xForwardedForFoundLine;
-                        }
-                        if (xOthersFoundLine) {
-                            // X-Others Found in Body を含む行が見つかった場合、表示する
-                            const urlTextElement = document.getElementById('xOthersFoundLine');
-                            urlTextElement.innerHTML = xOthersFoundLine;
-                        }
-                        if (DoSLine) {
-                            // 404 を含む行が見つかった場合、表示する
-                            const urlTextElement = document.getElementById('xOthersFoundLine');
-                            urlTextElement.innerHTML = DoSLine;
-                        }
-                    }
-                });
-            });
-        });
-    }
-    const jQuery171Button = document.getElementById('jQuery171');
-    if (jQuery171Button) {
-        jQuery171Button.addEventListener('click', function () {
-            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                const activeTab = tabs[0];
-                const url = activeTab.url;
-                window.open(url + '#(%20%20%20%20%20%20%20%20xxx())', '_blank');
-            });
-        });
-    }
+      const allUrls = [...data.sameDomain, ...data.differentDomain].filter(Boolean);
+      const externalUrls = data.differentDomain.filter((u) => u && u.startsWith('http'));
 
-    const jQuery183Button = document.getElementById('jQuery183');
-    if (jQuery183Button) {
-        jQuery183Button.addEventListener('click', function () {
-            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                const activeTab = tabs[0];
-                const url = activeTab.url;
-                window.open(url + '#A' + '*'.repeat(50000) + 'A', '_blank');
-            });
-        });
-    }
-    const XSLeakButton = document.getElementById('XSLeak');
-    if (XSLeakButton) {
-        XSLeakButton.addEventListener('click', function () {
-            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                const activeTab = tabs[0];
-                const url = activeTab.url;
-                window.open(url + '#x,*:has(*:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even)))))):has(*:even:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even)))))):has(*:even:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even)))))):has(*:even:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even)))))):has(*:even:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even)))))):has(*:even:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even)))))):has(*:even:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even)))))):has(*:even:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even)))))):has(*:even:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even)))))):contains(\'t\')', '_blank');
-            });
-        });
-    }
-    const ppButton = document.getElementById('pp');
-    if (ppButton) {
-        ppButton.addEventListener('click', function () {
-            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                const activeTab = tabs[0];
-                const url = activeTab.url;
-                window.open(url + '#__proto__[foo]=bar&constructor[prototype][foo]=bar&__proto__.foo=bar&constructor.prototype.test=test', '_blank');
-            });
-        });
-    }
-});
-function loadJavaScriptAndCssAndImageHeaders(activeTabDomain) {
-    // fetchResource関数を内部に定義
-    function fetchResource(url) {
-        // ランダムな12桁数値を生成
-        const randomValue1 = Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
-        const randomValue2 = Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
-        const randomValue3 = Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
-        const randomValue4 = Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
-        // 既存のクエリストリングがあるか確認
-        const hasQuery = url.includes('?');
-
-        // リクエストヘッダを設定
-        const headers = new Headers();
-        headers.append('X-Forwarded-Host', randomValue2);
-        headers.append('X-Forwarded-For', randomValue3);
-        headers.append('Base-Url', randomValue4);
-        headers.append('Client-IP', randomValue4);
-        headers.append('Http-Url', randomValue4);
-        headers.append('Proxy-Host', randomValue4);
-        headers.append('Proxy-Url', randomValue4);
-        headers.append('Real-Ip', randomValue4);
-        headers.append('Redirect', randomValue4);
-        headers.append('Referer', randomValue4);
-        headers.append('Referrer', randomValue4);
-        headers.append('Refferer', randomValue4);
-        headers.append('Request-Uri', randomValue4);
-        headers.append('Uri', randomValue4);
-        headers.append('Url', randomValue4);
-        headers.append('X-Client-IP', randomValue4);
-        headers.append('X-Custom-IP-Authorization', randomValue4);
-        headers.append('X-Forward-For', randomValue4);
-        headers.append('X-Forwarded-By', randomValue4);
-        headers.append('X-Forwarded-For-Original', randomValue4);
-        headers.append('X-Forwarded-Port', randomValue4);
-        headers.append('X-Forwarded-Scheme', randomValue4);
-        headers.append('X-Forwarded-Server', randomValue4);
-        headers.append('X-Forwarded', randomValue4);
-        headers.append('X-Forwarder-For', randomValue4);
-        headers.append('X-Host', randomValue4);
-        headers.append('X-Http-Destinationurl', randomValue4);
-        headers.append('X-Http-Host-Override', randomValue4);
-        headers.append('X-Original-Remote-Addr', randomValue4);
-        headers.append('X-Original-Url', randomValue4);
-        headers.append('X-Originating-IP', randomValue4);
-        headers.append('X-Proxy-Url', randomValue4);
-        headers.append('X-Real-Ip', randomValue4);
-        headers.append('X-Remote-Addr', randomValue4);
-        headers.append('X-Remote-IP', randomValue4);
-        headers.append('X-Rewrite-Url', randomValue4);
-        headers.append('X-True-IP', randomValue4);
-        headers.append('X-Timer', randomValue4);
-        headers.append('X-Http-Method-Override', randomValue4);
-        headers.append('Max-Forwards', randomValue4);
-        //        headers.append('Accept-Encoding', randomValue4);
-
-        // URLにクエリストリングを追加してfetchを実行
-        const fetchUrl = `${url}${hasQuery ? '&' : '?'}cb=${randomValue1}`;
-
-        return fetch(fetchUrl, {
-            method: 'GET',
-            headers: headers
-        }).then(async response => {
-            const headersString = Array.from(response.headers).map(header => `${header[0]}: ${header[1]}`).join('\n');
-
-            // 404エラーの処理
-            if (response.status === 404) {
-                console.log('404');
-                result = `Status: 404 Not Found: <a href="${fetchUrl}" target="_blank">${fetchUrl}</a>`;
-                return `${result}`;
-            }
-
-            // レスポンスのbodyを取得
-            const body = await response.text();
-
-            // bodyにX-Forwarded-Hostの値が含まれているか検索
-            const containsXForwardedHost = body.includes(`${randomValue2}`);
-            // bodyにX-Forwarded-Forの値が含まれているか検索
-            const containsXForwardedFor = body.includes(`${randomValue3}`);
-            // bodyにX-その他の値が含まれているか検索
-            const containsXother = body.includes(`${randomValue4}`);
-            // リクエストヘッダ、URL、レスポンス、含まれているかの情報を結合して返す
-            result = `Request Header:\nX-Forwarded-Host: ${randomValue2}\n\nX-Forwarded-For: ${randomValue3}\n\nX-Others: ${randomValue4}\n\nURL: ${fetchUrl}\nStatus: ${response.status}\n\nHeaders:\n${headersString}\n\nBody:\n${body}`;
-
-            if (containsXForwardedHost) {
-                result = `${result}\n\nX-Forwarded-Host Found in Body: <a href="${fetchUrl}" target="_blank">${fetchUrl}</a>`;
-            } else if (containsXForwardedFor) {
-                result = `${result}\n\nX-Forwarded-For Found in Body: <a href="${fetchUrl}" target="_blank">${fetchUrl}</a>`;
-            } else if (containsXother) {
-                result = `${result}\n\nX-Others Found in Body: <a href="${fetchUrl}" target="_blank">${fetchUrl}</a>`;
-            }
-            return `${result}`;
-
-        }).catch(error => {
-            return 'Error: ' + error.message;
-        });
-    }
-
-
-    // 同じドメインのJavaScriptファイルを取得
-    const scripts = Array.from(document.scripts).filter(script => script.src && new URL(script.src, location.href).hostname === activeTabDomain);
-
-    // 同じドメインのCSSファイルを取得
-    const stylesheets = Array.from(document.styleSheets).filter(sheet => {
+      const awsUrls = externalUrls.filter((url) => {
         try {
-            return sheet.href && new URL(sheet.href, location.href).hostname === activeTabDomain;
-        } catch (e) {
-            return false;
+          const h = new URL(url).hostname;
+          return h.endsWith('amazonaws.com') || h.includes('.s3.');
+        } catch {
+          return false;
         }
-    });
+      });
+      renderLinkList('staticscan', awsUrls);
 
-    // 同じドメインの画像ファイルを取得
-    const images = Array.from(document.images).filter(img => img.src && new URL(img.src, location.href).hostname === activeTabDomain);
+      const vulnUrls = allUrls.filter((url) => VULNERABLE_JS_PATHS.some((p) => url.includes(p)));
+      renderLinkList('jsscan', vulnUrls);
 
-    // amazonaws.comのドメインを持つ画像のURLを抽出
-    //const awsimages = Array.from(document.images).filter(img => 
-    //    img.src && new URL(img.src, location.href).hostname.endsWith('amazonaws.com')
-    //);
+      const jsUrls = allUrls.filter((url) => {
+        try {
+          if (!url.endsWith('.js')) return false;
+          const h = new URL(url).hostname;
+          return !EXCLUDE_JS_DOMAINS.some((d) => h.endsWith(d));
+        } catch {
+          return false;
+        }
+      });
 
-    // 結果のPromiseを生成
-    const promises = [];
-    promises.push(fetchResource(location.href));
-    if (scripts.length > 0) {
-        promises.push(fetchResource(scripts[0].src));
+      chrome.scripting.executeScript(
+        {
+          target: { tabId },
+          func: checkForRegex,
+          args: [jsUrls],
+        },
+        (regexResults) => {
+          const payload = regexResults?.[0]?.result || { regexUrls: [], suspiciousUrls: [] };
+          renderLinkList('regexscan', payload.regexUrls);
+          renderLinkList('suspicious', payload.suspiciousUrls);
+        }
+      );
+
+      chrome.scripting.executeScript(
+        {
+          target: { tabId },
+          func: searchForKeywords,
+          args: [jsUrls, KEYWORDS],
+        },
+        (kwResults) => {
+          renderKeywordResults(kwResults?.[0]?.result || []);
+        }
+      );
     }
-    if (stylesheets.length > 0) {
-        promises.push(fetchResource(stylesheets[0].href));
-    }
-    if (images.length > 0) {
-        promises.push(fetchResource(images[0].src));
-    }
+  );
+}
 
-    // Promise.allを使用して、すべての結果を待つ
-    return Promise.all(promises).then(results => {
-        return results.join('\n\n');
-    }).catch(error => {
-        return 'Error: ' + error.message;
-    });
+function renderReflectionFindings(lines) {
+  const container = document.getElementById('reflectionFindings');
+  const findings = [];
+
+  const hostLine = lines.find((l) => l.includes('X-Forwarded-Host Found in Body:'));
+  const forLine = lines.find((l) => l.includes('X-Forwarded-For Found in Body:'));
+  const otherLine = lines.find((l) => l.includes('X-Others Found in Body:'));
+  const dosLine = lines.find((l) => l.includes('Status: 404 Not Found'));
+
+  if (hostLine) findings.push({ label: 'X-Forwarded-Host 反射', html: hostLine });
+  if (forLine) findings.push({ label: 'X-Forwarded-For 反射', html: forLine });
+  if (otherLine) findings.push({ label: 'X-Others 反射', html: otherLine });
+  if (dosLine) findings.push({ label: '404', html: dosLine });
+
+  if (!findings.length) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = findings
+    .map(
+      (f) =>
+        `<div class="alert hit finding"><strong>${escapeHtml(f.label)}</strong><br>${escapeHtml(f.html)}</div>`
+    )
+    .join('');
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  initTabs();
+
+  const ctx = await getActiveTab();
+  const originLabel = document.getElementById('originLabel');
+
+  if (!ctx) {
+    originLabel.textContent = 'HTTP(S) ページで開いてください';
+    document.getElementById('resourceList').value = '';
+    return;
+  }
+
+  originLabel.textContent = ctx.tab.url;
+  runScan(ctx.tab.id, ctx.hostname);
+
+  document.getElementById('loadJs').addEventListener('click', async () => {
+    const btn = document.getElementById('loadJs');
+    btn.disabled = true;
+    document.getElementById('jsHeaders').value = 'スキャン中...';
+    document.getElementById('reflectionFindings').innerHTML = '';
+
+    chrome.scripting.executeScript(
+      {
+        target: { tabId: ctx.tab.id },
+        func: loadJavaScriptAndCssAndImageHeaders,
+        args: [ctx.hostname],
+      },
+      (results) => {
+        btn.disabled = false;
+        const text = results?.[0]?.result || '結果なし';
+        document.getElementById('jsHeaders').value = text;
+        renderReflectionFindings(text.split('\n'));
+      }
+    );
+  });
+
+  document.getElementById('jQuery171').addEventListener('click', () => {
+    if (!confirm('ReDoS PoC を新タブで開きます。続行しますか？')) return;
+    window.open(`${ctx.tab.url}#(%20%20%20%20%20%20%20%20xxx())`, '_blank');
+  });
+
+  document.getElementById('jQuery183').addEventListener('click', () => {
+    if (!confirm('ReDoS PoC を新タブで開きます。続行しますか？')) return;
+    window.open(`${ctx.tab.url}#A${'*'.repeat(50000)}A`, '_blank');
+  });
+
+  document.getElementById('XSLeak').addEventListener('click', () => {
+    if (!confirm('XS-Leak PoC を新タブで開きます。ブラウザが重くなる可能性があります。')) return;
+    const hash =
+      '#x,*:has(*:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even:has(*:even)))))):contains(\'t\')';
+    window.open(ctx.tab.url + hash, '_blank');
+  });
+
+  document.getElementById('pp').addEventListener('click', () => {
+    window.open(
+      `${ctx.tab.url}#__proto__[foo]=bar&constructor[prototype][foo]=bar&__proto__.foo=bar&constructor.prototype.test=test`,
+      '_blank'
+    );
+  });
+});
+
+// --- Injected page functions ---
+
+function listResources(activeTabDomain) {
+  const resources = document.querySelectorAll('link[rel="stylesheet"], script[src], img[src]');
+  return Array.from(resources).reduce(
+    (acc, el) => {
+      const url = el.href || el.src;
+      if (!url) return acc;
+      try {
+        const domain = new URL(url, location.href).hostname;
+        if (domain === activeTabDomain) acc.sameDomain.push(url);
+        else acc.differentDomain.push(url);
+      } catch {
+        /* skip */
+      }
+      return acc;
+    },
+    { sameDomain: [], differentDomain: [] }
+  );
+}
+
+function formatResourceList(resourceData) {
+  const same = resourceData.sameDomain.join('\n') || '(なし)';
+  const diff = resourceData.differentDomain.join('\n') || '(なし)';
+  return `Same Domain URLs:\n${same}\n\nDifferent Domain URLs:\n${diff}`;
 }
 
 function checkForRegex(urls) {
-    return Promise.all(urls.map(url => {
-        return fetch(url).then(response => response.text()).then(scriptContent => {
-            // Remove comments
-            const scriptWithoutComments = scriptContent.replace(/\/\/.*|\/\*[^]*?\*\//g, '');
-            const regexPattern = /(?<!\/\/)\/(?!\/)((?:\\\/|[^\/])+)\/[gimuy]*/g;
-            //const suspiciousPattern = /\/(?=[^\/]*(?:\+\+|\*\*|[\+\*][\+\*]|[\+\*]\||\|\+|\|\*|[|][\+\*]))[^\/]*\/[gimuy]*/g;
-            const suspiciousPattern = /\+\)\+|\+\)\*/g;
-            //const suspiciousPattern2 = /\(.+\|.+\)[+*]/g;
-            let regexUrls = [];
-            let suspiciousUrls = [];
+  const regexPattern = /\/(?:\\\/|[^\/\n])+\/[gimuy]*/g;
+  const suspiciousPattern = /\+\)\+|\+\)\*/g;
 
-            const regexMatches = scriptWithoutComments.match(regexPattern);
-            if (regexMatches) {
-                if (regexMatches.some(match => suspiciousPattern.test(match))) {
-                    suspiciousUrls.push(url);
-                    //            } else if (regexMatches.some(match => suspiciousPattern2.test(match))) {
-                    //                suspiciousUrls.push(url);
-                } else {
-                    regexUrls.push(url);
-                }
-            }
-
-            return { regexUrls, suspiciousUrls };
-        }).catch(() => null);
-    })).then(results => {
-        const regexUrls = results.flatMap(result => result ? result.regexUrls : []);
-        const suspiciousUrls = results.flatMap(result => result ? result.suspiciousUrls : []);
-        return { regexUrls, suspiciousUrls };
-    });
+  return Promise.all(
+    urls.map((url) =>
+      fetch(url)
+        .then((r) => r.text())
+        .then((scriptContent) => {
+          const cleaned = scriptContent.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '');
+          const regexUrls = [];
+          const suspiciousUrls = [];
+          const matches = cleaned.match(regexPattern);
+          if (matches) {
+            if (matches.some((m) => suspiciousPattern.test(m))) suspiciousUrls.push(url);
+            else regexUrls.push(url);
+          }
+          return { regexUrls, suspiciousUrls };
+        })
+        .catch(() => ({ regexUrls: [], suspiciousUrls: [] }))
+    )
+  ).then((results) => ({
+    regexUrls: [...new Set(results.flatMap((r) => r.regexUrls))],
+    suspiciousUrls: [...new Set(results.flatMap((r) => r.suspiciousUrls))],
+  }));
 }
 
-function listResources(activeTabDomain) {
-    const resources = document.querySelectorAll('link[rel="stylesheet"], script, img');
-    const resourceUrls = Array.from(resources).map(res => res.href || res.src);
-
-    return resourceUrls.reduce((acc, url) => {
-        const domain = new URL(url, location.href).hostname;
-        if (domain === activeTabDomain) {
-            acc.sameDomain.push(url);
-        } else {
-            acc.differentDomain.push(url);
-        }
-        return acc;
-    }, { sameDomain: [], differentDomain: [] });
-}
-/*
-function formatResourceList(resourceData) {
-    let formattedList = 'Same Domain URLs:\n';
-    formattedList += resourceData.sameDomain.join('\n') + '\n\n';
-    formattedList += 'Different Domain URLs:\n';
-    formattedList += resourceData.differentDomain.join('\n');
-    return formattedList;
-}*/
-
-function formatResourceList(resourceData) {
-    // 同一ドメインのURLセクションを作成
-    const sameDomainSection = ['Same Domain URLs:'].concat(resourceData.sameDomain);
-
-    // 異なるドメインのURLセクションを作成
-    const differentDomainSection = ['Different Domain URLs:'].concat(resourceData.differentDomain);
-
-    // 両方のセクションを一つのリストに統合
-    const formattedList = [sameDomainSection, '', differentDomainSection];
-    // 空の要素を除外して新しいリストを作成
-    const filteredList = formattedList.filter(item => item);
-    return filteredList;
-}
-
-// 複数のURLに対してキーワード検索を行う関数
 function searchForKeywords(urls, keywords) {
-    return Promise.all(urls.map(url => {
-        return fetch(url).then(response => response.text()).then(content => {
-            const foundKeywords = [];
-            // キーワードを検索
-            keywords.forEach(keyword => {
-                if (content.includes(keyword)) {
-                    foundKeywords.push(keyword);
-                }
-            });
-            if (foundKeywords.length > 0) {
-                return { url, foundKeywords };
-            } else {
-                return null;
-            }
-        }).catch(() => null);
-    })).then(results => {
-        // 結果からnullを除外
-        return results.filter(result => result !== null);
-    });
+  return Promise.all(
+    urls.map((url) =>
+      fetch(url)
+        .then((r) => r.text())
+        .then((content) => {
+          const foundKeywords = keywords.filter((kw) => content.includes(kw));
+          return foundKeywords.length ? { url, foundKeywords } : null;
+        })
+        .catch(() => null)
+    )
+  ).then((results) => results.filter(Boolean));
+}
+
+function loadJavaScriptAndCssAndImageHeaders(activeTabDomain) {
+  const BODY_PREVIEW_MAX = 4000;
+
+  function fetchResource(url) {
+    const r2 = Math.floor(Math.random() * 1e12).toString().padStart(12, '0');
+    const r3 = Math.floor(Math.random() * 1e12).toString().padStart(12, '0');
+    const r4 = Math.floor(Math.random() * 1e12).toString().padStart(12, '0');
+    const r1 = Math.floor(Math.random() * 1e12).toString().padStart(12, '0');
+    const hasQuery = url.includes('?');
+    const fetchUrl = `${url}${hasQuery ? '&' : '?'}cb=${r1}`;
+
+    const headers = new Headers();
+    headers.append('X-Forwarded-Host', r2);
+    headers.append('X-Forwarded-For', r3);
+    headers.append('Base-Url', r4);
+    headers.append('Client-IP', r4);
+    headers.append('Http-Url', r4);
+    headers.append('Proxy-Host', r4);
+    headers.append('Real-Ip', r4);
+    headers.append('Referer', r4);
+    headers.append('Url', r4);
+
+    return fetch(fetchUrl, { method: 'GET', headers })
+      .then(async (response) => {
+        const headersString = [...response.headers.entries()].map(([k, v]) => `${k}: ${v}`).join('\n');
+
+        if (response.status === 404) {
+          return `Status: 404 Not Found: ${fetchUrl}`;
+        }
+
+        let body = await response.text();
+        if (body.length > BODY_PREVIEW_MAX) {
+          body = `${body.slice(0, BODY_PREVIEW_MAX)}\n... (truncated)`;
+        }
+
+        let result = `URL: ${fetchUrl}\nStatus: ${response.status}\n\nHeaders:\n${headersString}\n\nBody:\n${body}`;
+
+        if (body.includes(r2)) {
+          result += `\n\nX-Forwarded-Host Found in Body: ${fetchUrl}`;
+        }
+        if (body.includes(r3)) {
+          result += `\n\nX-Forwarded-For Found in Body: ${fetchUrl}`;
+        }
+        if (body.includes(r4)) {
+          result += `\n\nX-Others Found in Body: ${fetchUrl}`;
+        }
+        return result;
+      })
+      .catch((error) => `Error: ${error.message} (${url})`);
+  }
+
+  const scripts = [...document.scripts].filter((s) => {
+    try {
+      return s.src && new URL(s.src, location.href).hostname === activeTabDomain;
+    } catch {
+      return false;
+    }
+  });
+
+  const stylesheets = [...document.styleSheets].filter((s) => {
+    try {
+      return s.href && new URL(s.href, location.href).hostname === activeTabDomain;
+    } catch {
+      return false;
+    }
+  });
+
+  const images = [...document.images].filter((img) => {
+    try {
+      return img.src && new URL(img.src, location.href).hostname === activeTabDomain;
+    } catch {
+      return false;
+    }
+  });
+
+  const promises = [fetchResource(location.href)];
+  if (scripts[0]) promises.push(fetchResource(scripts[0].src));
+  if (stylesheets[0]) promises.push(fetchResource(stylesheets[0].href));
+  if (images[0]) promises.push(fetchResource(images[0].src));
+
+  return Promise.all(promises).then((results) => results.join('\n\n---\n\n'));
 }
