@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Resource Counter",
-  "version": "2.0.2",
+  "version": "2.0.4",
   "description": "ページリソースの列挙、キャッシュヘッダ検出、ヘッダ反射・脆弱JS/正規表現スキャンなどの診断支援",
   "action": {
     "default_popup": "popup.html",
@@ -14,7 +14,8 @@
   },
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage"
   ],
   "host_permissions": [
     "http://*/*",

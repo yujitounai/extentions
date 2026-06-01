@@ -67,6 +67,92 @@ function renderKeywordResults(items) {
     .join('');
 }
 
+function formatCacheHeaderLine(label, value) {
+  if (!value) return '';
+  return `<div class="meta">${escapeHtml(label)}: ${escapeHtml(value)}</div>`;
+}
+
+function renderCacheDetails(payload) {
+  const panel = document.getElementById('cacheDetailsPanel');
+  const summary = document.getElementById('cacheSummary');
+  const list = document.getElementById('cacheDetailsList');
+
+  if (!payload || payload.status !== 'cache') {
+    panel.hidden = true;
+    list.innerHTML = '';
+    return;
+  }
+
+  const hits = payload.checked.filter((c) => c.hit);
+  const others = payload.checked.filter((c) => !c.hit && !c.error);
+  const errors = payload.checked.filter((c) => c.error);
+
+  panel.hidden = false;
+  summary.textContent = `同一オリジン ${payload.checked.length} 件を確認し、${hits.length} 件でキャッシュ関連ヘッダを検出しました。`;
+
+  const sections = [];
+
+  for (const entry of hits) {
+    const safeUrl = escapeHtml(entry.url);
+    sections.push(
+      `<div class="cache-entry hit">
+        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>
+        <div class="reason">${escapeHtml(entry.reason || '検出')}</div>
+        ${formatCacheHeaderLine('取得元', entry.source === 'performance' ? 'Performance API' : 'fetch')}
+        ${formatCacheHeaderLine('HTTP', entry.httpStatus != null ? String(entry.httpStatus) : '')}
+        ${formatCacheHeaderLine('Cache-Control', entry.cacheControl)}
+        ${formatCacheHeaderLine('Expires', entry.expires)}
+        ${formatCacheHeaderLine('Age', entry.age)}
+        ${formatCacheHeaderLine('ETag', entry.etag)}
+        ${formatCacheHeaderLine('Last-Modified', entry.lastModified)}
+        ${formatCacheHeaderLine('X-Cache', entry.xCache)}
+        ${formatCacheHeaderLine('X-Cache-Hits', entry.xCacheHits)}
+        ${formatCacheHeaderLine('CF-Cache-Status', entry.cfCacheStatus)}
+        ${formatCacheHeaderLine('Surrogate-Control', entry.surrogateControl)}
+        ${formatCacheHeaderLine('CDN-Cache-Control', entry.cdnCacheControl)}
+        ${formatCacheHeaderLine('Via', entry.via)}
+        ${formatCacheHeaderLine('deliveryType', entry.deliveryType)}
+        ${formatCacheHeaderLine('transferSize', entry.transferSize != null ? String(entry.transferSize) : '')}
+      </div>`
+    );
+  }
+
+  if (others.length) {
+    sections.push(`<div class="meta" style="margin: 8px 0 4px;">検出なし（参考）</div>`);
+    for (const entry of others) {
+      const safeUrl = escapeHtml(entry.url);
+      sections.push(
+        `<div class="cache-entry miss">
+          <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>
+          ${formatCacheHeaderLine('HTTP', String(entry.httpStatus ?? ''))}
+          ${formatCacheHeaderLine('Cache-Control', entry.cacheControl || '(なし)')}
+        </div>`
+      );
+    }
+  }
+
+  if (errors.length) {
+    sections.push(`<div class="meta" style="margin: 8px 0 4px;">取得エラー</div>`);
+    for (const entry of errors) {
+      sections.push(
+        `<div class="cache-entry miss">
+          ${escapeHtml(entry.url)}<div class="meta">${escapeHtml(entry.error)}</div>
+        </div>`
+      );
+    }
+  }
+
+  list.innerHTML = sections.join('');
+}
+
+async function loadCacheScanDetails(tabId) {
+  try {
+    return await chrome.runtime.sendMessage({ type: 'GET_CACHE_SCAN', tabId });
+  } catch {
+    return null;
+  }
+}
+
 function initTabs() {
   document.querySelectorAll('.tab').forEach((button) => {
     button.addEventListener('click', () => {
@@ -198,6 +284,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   originLabel.textContent = ctx.tab.url;
+
+  const cachePayload = await loadCacheScanDetails(ctx.tab.id);
+  renderCacheDetails(cachePayload);
+  if (!cachePayload) {
+    chrome.runtime
+      .sendMessage({ type: 'REFRESH_CACHE_SCAN', tabId: ctx.tab.id })
+      .then((fresh) => renderCacheDetails(fresh))
+      .catch(() => {});
+  }
+
+  document.getElementById('refreshCacheScan')?.addEventListener('click', async () => {
+    const btn = document.getElementById('refreshCacheScan');
+    btn.disabled = true;
+    document.getElementById('cacheSummary').textContent = '再スキャン中...';
+    try {
+      const fresh = await chrome.runtime.sendMessage({ type: 'REFRESH_CACHE_SCAN', tabId: ctx.tab.id });
+      renderCacheDetails(fresh);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   runScan(ctx.tab.id, ctx.hostname);
 
   document.getElementById('loadJs').addEventListener('click', async () => {

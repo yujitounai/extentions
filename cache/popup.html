@@ -119,6 +119,26 @@
       color: #fecaca;
     }
     .finding { font-size: 11px; margin-bottom: 6px; word-break: break-all; }
+    .cache-panel {
+      border-color: rgba(34, 197, 94, 0.35);
+      background: rgba(34, 197, 94, 0.08);
+    }
+    .cache-panel h2 { color: #86efac; }
+    .cache-summary { font-size: 12px; margin: 0 0 8px; color: #bbf7d0; }
+    .cache-entry {
+      font-size: 11px;
+      padding: 8px;
+      margin-bottom: 6px;
+      border-radius: 8px;
+      background: #11151c;
+      border: 1px solid var(--border);
+      word-break: break-all;
+    }
+    .cache-entry.hit { border-color: rgba(34, 197, 94, 0.35); }
+    .cache-entry.miss { opacity: 0.75; }
+    .cache-entry a { color: #93c5fd; }
+    .cache-entry .meta { color: var(--muted); margin-top: 4px; }
+    .cache-entry .reason { color: #86efac; margin-top: 4px; }
     .guide { font-size: 12px; color: var(--muted); line-height: 1.6; max-height: 360px; overflow: auto; }
     .guide h2 { color: var(--text); font-size: 13px; margin: 12px 0 6px; }
     .guide h2:first-child { margin-top: 0; }
@@ -140,6 +160,14 @@
     </div>
 
     <div id="tab-resources" class="tab-panel active">
+      <div id="cacheDetailsPanel" class="panel cache-panel" hidden>
+        <h2>キャッシュ検出（バッジ cache）</h2>
+        <p class="cache-summary" id="cacheSummary"></p>
+        <div id="cacheDetailsList"></div>
+        <div class="row" style="margin-top: 8px; margin-bottom: 0;">
+          <button type="button" id="refreshCacheScan">再スキャン</button>
+        </div>
+      </div>
       <div class="panel">
         <h2>ページリソース</h2>
         <textarea id="resourceList" readonly placeholder="スキャン中..."></textarea>
@@ -197,7 +225,7 @@
         <h2>概要</h2>
         <p>ページ上の CSS / JS / 画像を列挙し、キャッシュヘッダ・S3・脆弱ライブラリ・正規表現・ヘッダ反射などを調べる診断用拡張です。</p>
         <h2>バッジ</h2>
-        <p>ページ読み込み後、同一オリジンのリソースにキャッシュヘッダがあれば <strong>cache</strong> と表示されます。</p>
+        <p>ページ読み込み後、同一オリジン最大10件をスキャンします。Cache-Control / Expires / Age / CDN ヘッダに加え、Performance API でブラウザキャッシュヒットも検出します。検出時はツールバーに <strong>cache</strong>、Resources タブ上部に詳細が出ます。</p>
         <h2>Headers タブ</h2>
         <p>偽装 X-Forwarded 系ヘッダを付けてリソースを再取得し、レスポンス body への反射を確認します。</p>
         <h2>Tools タブ</h2>

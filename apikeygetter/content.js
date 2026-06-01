@@ -58,10 +58,52 @@ function collectPageAssets() {
   return { iframes, scripts };
 }
 
+function partitionScripts(scripts) {
+  const inPage = [];
+  const viaExtension = [];
+
+  for (const src of scripts) {
+    try {
+      const url = new URL(src, location.href);
+      if (url.protocol === 'blob:') continue;
+      // HTTPS ページから HTTP スクリプトを fetch すると Mixed Content でブロックされる
+      if (location.protocol === 'https:' && url.protocol === 'http:') {
+        viaExtension.push(src);
+      } else {
+        inPage.push(src);
+      }
+    } catch {
+      /* skip invalid URL */
+    }
+  }
+
+  return { inPage, viaExtension };
+}
+
+function fetchScriptsViaExtension(urls) {
+  if (!urls.length) return Promise.resolve([]);
+
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'FETCH_AND_SCAN_SCRIPTS', urls }, (response) => {
+      const err = chrome.runtime.lastError;
+      if (err) {
+        if (!shouldSuppressError(err)) {
+          console.warn('[Secret Scanner] extension fetch failed:', err.message);
+        }
+        resolve([]);
+        return;
+      }
+      resolve(response?.results || []);
+    });
+  });
+}
+
 async function fetchExternalScripts(scripts) {
   const results = [];
+  const { inPage, viaExtension } = partitionScripts(scripts);
+
   await Promise.all(
-    scripts.map(async (src) => {
+    inPage.map(async (src) => {
       try {
         const res = await fetch(src);
         if (!res.ok) return;
@@ -72,6 +114,12 @@ async function fetchExternalScripts(scripts) {
       }
     })
   );
+
+  if (viaExtension.length) {
+    const extensionResults = await fetchScriptsViaExtension(viaExtension);
+    results.push(...extensionResults);
+  }
+
   return results;
 }
 

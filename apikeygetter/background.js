@@ -120,6 +120,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
 
+    if (message.type === 'FETCH_AND_SCAN_SCRIPTS') {
+      const urls = Array.isArray(message.urls) ? message.urls : [];
+      const results = [];
+
+      await Promise.all(
+        urls.map(async (src) => {
+          try {
+            const res = await fetch(src);
+            if (!res.ok) return;
+            const text = await res.text();
+            results.push(...scanText(text, 'external_script', `外部スクリプト: ${src}`));
+          } catch {
+            // 取得できない場合は URL 文字列のみスキャン
+            results.push(...scanText(src, 'external_script', `外部スクリプト URL（未取得）: ${src}`));
+          }
+        })
+      );
+
+      sendResponse({ ok: true, results: dedupeResults(results) });
+      return;
+    }
+
     if (message.type === 'DOM_SCAN_RESULTS' && tabId !== undefined) {
       const state = getTabState(tabId);
       state.url = message.url || state.url;
