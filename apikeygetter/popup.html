@@ -172,6 +172,33 @@
       color: #fecaca;
       font-size: 11px;
     }
+    .cdn-alert {
+      border-color: rgba(220, 38, 38, 0.45);
+      background: rgba(220, 38, 38, 0.12);
+      margin-bottom: 10px;
+    }
+    .cdn-alert h2 {
+      margin: 0 0 6px;
+      font-size: 13px;
+      color: #fecaca;
+    }
+    .cdn-alert p {
+      margin: 0 0 8px;
+      font-size: 11px;
+      color: #fca5a5;
+      line-height: 1.5;
+    }
+    .cdn-hit {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 11px;
+    }
+    .cdn-hit:last-child { border-bottom: none; }
+    .cdn-hit a {
+      color: #fde047;
+      word-break: break-all;
+    }
+    .cdn-hit .meta { color: #94a3b8; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -191,6 +218,11 @@
     </div>
 
     <div id="tab-results" class="tab-panel active" role="tabpanel">
+      <div id="squattedCdnPanel" class="panel cdn-alert" hidden>
+        <h2>侵害 CDN / スクワッティング CDN</h2>
+        <p>既知の危険ドメインからの読み込み、または HTML 内の参照を検出しました。直ちに削除・代替 CDN へ差し替えを検討してください。</p>
+        <div id="squattedCdnList"></div>
+      </div>
       <div class="row">
         <button class="primary" id="rescanBtn">Rescan</button>
         <span id="resultCount" class="empty"></span>
@@ -219,7 +251,13 @@
           秘密情報らしき文字列を自動検出します。旧 API Key Getter と Hidden Search を統合した v1 です。
         </p>
 
-        <h2>検出パターン（16種）</h2>
+        <h2>スクワッティング CDN</h2>
+        <p>
+          Polyfill.io サプライチェーン攻撃で報告された bootcdn / staticfile 等のドメインを監視します。
+          script・link・iframe・画像・Performance API の読み込みと HTML 内の文字列参照を確認します。
+        </p>
+
+        <h2>検出パターン（15種）</h2>
         <ul>
           <li>AWS アクセスキー / Credentials</li>
           <li>Google API キー、Stripe、SendGrid、OpenAI</li>

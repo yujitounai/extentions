@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enable Copy Paste</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>CP</h1>
+      <span class="subtitle">Unblock</span>
+    </div>
+
+    <div class="current-site">
+      <span class="label">現在のサイト</span>
+      <span class="domain" id="currentDomain">-</span>
+    </div>
+
+    <div class="toggle-section">
+      <div class="toggle-row">
+        <span class="toggle-label">このサイト</span>
+        <button class="toggle-btn" id="siteToggle" data-enabled="true" type="button">
+          <span class="toggle-slider"></span>
+        </button>
+      </div>
+
+      <div class="toggle-row">
+        <span class="toggle-label">全サイト</span>
+        <button class="toggle-btn" id="globalToggle" data-enabled="true" type="button">
+          <span class="toggle-slider"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="status-bar enabled" id="statusBar">
+      <span class="status-icon">✓</span>
+      <span class="status-text" id="statusText">コピペ解除 有効</span>
+    </div>
+
+    <div class="reload-hint" id="reloadHint">
+      <span>⟳ 設定変更後はページをリロードしてください</span>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

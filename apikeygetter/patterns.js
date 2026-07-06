@@ -18,7 +18,6 @@ const SECRET_PATTERNS = [
   { id: 'private_ip_172', name: 'プライベートIP (172.x)', regex: /172\.[123]?\d?\.[12]?\d{1,2}\.[12]?\d{1,2}/g },
   { id: 's3_bucket', name: 'S3 Bucket URL', regex: /https?:\/\/[\w-]{1,255}?\.s3\.[\w-]{10,20}?\.amazonaws\.com\//g },
   { id: 'slack_token', name: 'Slack Token', regex: /xoxp-\d{13}-\d{13}-\d{13}-[\w]{32}/g },
-  { id: 'uuid', name: 'UUID', regex: /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi },
   { id: 'four_g_token', name: '4gtoken', regex: /4gtoken/g },
   { id: 'private_key', name: 'Private Key', regex: /-----BEGIN [\w]{2,3} PRIVATE KEY-----/g },
   { id: 'github_token', name: 'GitHub Access Token', regex: /[a-zA-Z0-9_-]*:[a-zA-Z0-9_\-]+@github\.com/g },

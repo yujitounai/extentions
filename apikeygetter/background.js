@@ -25,6 +25,7 @@ function emptyTabState() {
     results: [],
     iframes: [],
     scripts: [],
+    squattedCdns: [],
   };
 }
 
@@ -91,10 +92,23 @@ function updateBadgeAndIcon(tabId) {
     return;
   }
 
-  const count = (state.results || []).length;
-  chrome.action.setBadgeText({ tabId, text: count ? String(count) : '' }, () => void chrome.runtime.lastError);
-  chrome.action.setBadgeBackgroundColor({ tabId, color: '#ef4444' }, () => void chrome.runtime.lastError);
-  chrome.action.setIcon({ tabId, path: count ? ICON_ALERT : ICON_DEFAULT }, () => void chrome.runtime.lastError);
+  const secretCount = (state.results || []).length;
+  const cdnCount = (state.squattedCdns || []).length;
+  const alert = secretCount > 0 || cdnCount > 0;
+
+  let badgeText = '';
+  if (cdnCount > 0) {
+    badgeText = cdnCount > 9 ? '9+' : String(cdnCount);
+  } else if (secretCount > 0) {
+    badgeText = secretCount > 99 ? '99+' : String(secretCount);
+  }
+
+  chrome.action.setBadgeText({ tabId, text: badgeText }, () => void chrome.runtime.lastError);
+  chrome.action.setBadgeBackgroundColor(
+    { tabId, color: cdnCount > 0 ? '#dc2626' : '#ef4444' },
+    () => void chrome.runtime.lastError
+  );
+  chrome.action.setIcon({ tabId, path: alert ? ICON_ALERT : ICON_DEFAULT }, () => void chrome.runtime.lastError);
 }
 
 function buildTabPayload(state) {
@@ -104,6 +118,7 @@ function buildTabPayload(state) {
     results: state.results || [],
     iframes: state.iframes || [],
     scripts: state.scripts || [],
+    squattedCdns: state.squattedCdns || [],
     scanning: false,
   };
 }
@@ -149,6 +164,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       state.results = dedupeResults(message.results || []);
       state.iframes = message.iframes || [];
       state.scripts = message.scripts || [];
+      state.squattedCdns = message.squattedCdns || [];
 
       await saveTabState(tabId);
       updateBadgeAndIcon(tabId);

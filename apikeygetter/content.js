@@ -58,6 +58,75 @@ function collectPageAssets() {
   return { iframes, scripts };
 }
 
+function collectResourceReferences() {
+  const items = [];
+
+  function add(url, source) {
+    if (!url || url.startsWith('data:') || url.startsWith('blob:')) return;
+    try {
+      items.push({ url: new URL(url, location.href).href, source });
+    } catch {
+      /* skip */
+    }
+  }
+
+  document.querySelectorAll('script[src]').forEach((el) => add(el.src, 'script'));
+  document.querySelectorAll('link[href]').forEach((el) => add(el.href, 'link'));
+  document.querySelectorAll('iframe[src]').forEach((el) => add(el.src, 'iframe'));
+  document.querySelectorAll('img[src], source[src], video[src], audio[src]').forEach((el) => {
+    add(el.src || el.currentSrc, el.tagName.toLowerCase());
+  });
+
+  for (const entry of performance.getEntriesByType('resource')) {
+    add(entry.name, 'performance');
+  }
+
+  return items;
+}
+
+const SOURCE_LABELS = {
+  script: 'script',
+  link: 'link',
+  iframe: 'iframe',
+  img: 'img',
+  source: 'source',
+  video: 'video',
+  audio: 'audio',
+  performance: 'Performance API',
+  html_reference: 'HTML内参照',
+};
+
+function detectSquattedCdns() {
+  const hits = [];
+  const matchedDomainsFromResources = new Set();
+
+  for (const { url, source } of collectResourceReferences()) {
+    const match = matchSquattedCdnUrl(url);
+    if (!match) continue;
+    matchedDomainsFromResources.add(match.matchedDomain);
+    hits.push({
+      url: match.url,
+      hostname: match.hostname,
+      matchedDomain: match.matchedDomain,
+      source: SOURCE_LABELS[source] || source,
+    });
+  }
+
+  const html = document.documentElement?.outerHTML || '';
+  for (const domain of SQUATTED_CDN_DOMAINS) {
+    if (!html.includes(domain)) continue;
+    if (matchedDomainsFromResources.has(domain)) continue;
+    hits.push({
+      url: `（HTML内に "${domain}" の記述）`,
+      hostname: domain,
+      matchedDomain: domain,
+      source: SOURCE_LABELS.html_reference,
+    });
+  }
+
+  return dedupeSquattedCdnHits(hits);
+}
+
 function partitionScripts(scripts) {
   const inPage = [];
   const viaExtension = [];
@@ -134,6 +203,7 @@ async function runScan() {
     }
 
     const assets = collectPageAssets();
+    const squattedCdns = detectSquattedCdns();
     const scriptResults = await fetchExternalScripts(assets.scripts);
     const domResults = dedupeResults([
       ...searchPageHtml(),
@@ -148,6 +218,7 @@ async function runScan() {
       results: domResults,
       iframes: assets.iframes,
       scripts: assets.scripts,
+      squattedCdns,
     });
   } finally {
     scanInProgress = false;

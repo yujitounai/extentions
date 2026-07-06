@@ -70,6 +70,31 @@ function renderResults(results) {
   container.innerHTML = results.map(renderResultItem).join('');
 }
 
+function renderSquattedCdns(hits) {
+  const panel = document.getElementById('squattedCdnPanel');
+  const list = document.getElementById('squattedCdnList');
+
+  if (!hits?.length) {
+    panel.hidden = true;
+    list.innerHTML = '';
+    return;
+  }
+
+  panel.hidden = false;
+  list.innerHTML = hits
+    .map((hit) => {
+      const isLink = hit.url.startsWith('http');
+      const urlHtml = isLink
+        ? `<a href="${escapeHtml(hit.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(hit.url)}</a>`
+        : escapeHtml(hit.url);
+      return `<div class="cdn-hit">
+        ${urlHtml}
+        <div class="meta">ドメイン: ${escapeHtml(hit.matchedDomain)} · ${escapeHtml(hit.source)}</div>
+      </div>`;
+    })
+    .join('');
+}
+
 function renderAssetList(containerId, items) {
   const container = document.getElementById(containerId);
   if (!items?.length) {
@@ -94,18 +119,40 @@ function renderState(data) {
     resultCount.textContent = 'このドメインはスキャン対象外です';
     document.getElementById('results').className = 'results-list skipped';
     document.getElementById('results').textContent = '除外ドメインのためスキャンしていません';
+    renderSquattedCdns([]);
     renderAssetList('iframes', []);
     renderAssetList('scripts', []);
     return;
   }
 
   const count = data.results?.length || 0;
-  statusBadge.textContent = data.scanning ? 'Scanning' : count ? `${count} found` : 'Clean';
-  statusBadge.className = data.scanning ? 'badge' : count ? 'badge alert' : 'badge';
-  resultCount.textContent = data.scanning
-    ? '外部 script をスキャン中...'
-    : `${count} 件の候補を検出`;
+  const cdnCount = data.squattedCdns?.length || 0;
+  const alert = count > 0 || cdnCount > 0;
 
+  if (data.scanning) {
+    statusBadge.textContent = 'Scanning';
+    statusBadge.className = 'badge';
+  } else if (cdnCount > 0) {
+    statusBadge.textContent = `CDN ${cdnCount}`;
+    statusBadge.className = 'badge alert';
+  } else if (count > 0) {
+    statusBadge.textContent = `${count} found`;
+    statusBadge.className = 'badge alert';
+  } else {
+    statusBadge.textContent = 'Clean';
+    statusBadge.className = 'badge';
+  }
+
+  const countParts = [];
+  if (cdnCount) countParts.push(`危険 CDN ${cdnCount} 件`);
+  if (count) countParts.push(`秘密情報候補 ${count} 件`);
+  resultCount.textContent = data.scanning
+    ? 'スキャン中...'
+    : countParts.length
+      ? countParts.join(' · ')
+      : '検出なし';
+
+  renderSquattedCdns(data.squattedCdns);
   renderResults(data.results);
   renderAssetList('iframes', data.iframes);
   renderAssetList('scripts', data.scripts);
@@ -163,7 +210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     pollTimer = setInterval(async () => {
       pollAttempts += 1;
       const data = await refresh();
-      const hasResults = (data?.results?.length || 0) > 0;
+      const hasResults = (data?.results?.length || 0) > 0 || (data?.squattedCdns?.length || 0) > 0;
       const done = data?.skipped || hasResults || !data?.scanning;
       if (done || pollAttempts >= MAX_POLL_ATTEMPTS) {
         stopPolling();
