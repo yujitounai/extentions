@@ -11,6 +11,7 @@
 - MutationObserver で動的コンテンツにも対応
 - タブ別バッジ件数 + アラートアイコン
 - iframe / script URL 一覧表示
+- ファイル探索（robots.txt / .env / .git / wp-config / actuator / swagger / バックアップ / .map 等）
 - 除外ドメイン（Google、Amazon 等）
 
 ## インストール

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Secret Scanner",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "description": "ページ内テキストと JavaScript から API キー・トークン等の秘密情報候補を自動検出します。",
   "permissions": [
     "tabs",

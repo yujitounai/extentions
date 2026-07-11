@@ -199,6 +199,46 @@
       word-break: break-all;
     }
     .cdn-hit .meta { color: #94a3b8; margin-top: 4px; }
+    .probe-item {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+    }
+    .probe-item:last-child { border-bottom: none; }
+    .probe-item a {
+      color: #fcd34d;
+      word-break: break-all;
+      display: block;
+    }
+    .probe-item .meta {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 10px;
+    }
+    .status-pill {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .status-pill.ok {
+      background: rgba(34, 197, 94, 0.15);
+      color: #86efac;
+    }
+    .status-pill.redirect {
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+    }
+    .status-pill.forbidden {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fcd34d;
+    }
+    .status-pill.auth {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+    }
   </style>
 </head>
 <body>
@@ -214,6 +254,7 @@
     <div class="tabs" role="tablist">
       <button class="tab active" data-tab="results" role="tab">検出結果</button>
       <button class="tab" data-tab="assets" role="tab">アセット</button>
+      <button class="tab" data-tab="probe" role="tab">ファイル探索</button>
       <button class="tab" data-tab="guide" role="tab">使い方</button>
     </div>
 
@@ -240,6 +281,19 @@
       <div class="panel">
         <strong>script 一覧</strong>
         <div id="scripts" class="asset-list empty">なし</div>
+      </div>
+    </div>
+
+    <div id="tab-probe" class="tab-panel" role="tabpanel">
+      <div class="row">
+        <button class="primary" id="probeBtn">ファイル探索</button>
+        <span id="probeStatus" class="empty"></span>
+      </div>
+      <div class="panel">
+        <p style="margin: 0 0 8px; font-size: 11px; color: var(--muted);">
+          robots.txt / sitemap / .env / .git / wp-config / actuator / swagger / バックアップなど、診断で見逃しがちなパスと、ページ上 script の .map を探します。
+        </p>
+        <div id="probeResults" class="results-list empty">まだ探索していません</div>
       </div>
     </div>
 
@@ -272,6 +326,14 @@
 
         <h2>Rescan</h2>
         <p>動的に読み込まれたコンテンツを再スキャンしたい場合に使用します。</p>
+
+        <h2>ファイル探索</h2>
+        <p>
+          現在のオリジンに対して robots.txt、sitemap.xml、.env、.git、wp-config、
+          actuator/heapdump、swagger、バックアップ、ページ上の script に対応する .map など、
+          診断で見逃しがちなパスを HEAD/GET で確認します。
+          200 / 301 / 302 / 401 / 403 をヒットとして表示します。
+        </p>
 
         <h2>注意事項</h2>
         <div class="note">

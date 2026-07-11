@@ -109,6 +109,43 @@ function renderAssetList(containerId, items) {
   }).join('');
 }
 
+function statusPillClass(status) {
+  if (status >= 200 && status < 300) return 'ok';
+  if (status >= 300 && status < 400) return 'redirect';
+  if (status === 401) return 'auth';
+  if (status === 403) return 'forbidden';
+  return 'ok';
+}
+
+function kindLabel(kind) {
+  if (kind === 'sourcemap') return 'source map';
+  return '共通パス';
+}
+
+function renderProbeResults(items, { emptyMessage = 'まだ探索していません' } = {}) {
+  const container = document.getElementById('probeResults');
+  if (!items?.length) {
+    container.className = 'results-list empty';
+    container.textContent = emptyMessage;
+    return;
+  }
+  container.className = 'results-list';
+  container.innerHTML = items
+    .map((item) => {
+      const safeUrl = escapeHtml(item.url);
+      const pill = statusPillClass(item.status);
+      return `<div class="probe-item">
+        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>
+        <div class="meta">
+          <span class="status-pill ${pill}">${escapeHtml(String(item.status))}</span>
+          ${escapeHtml(kindLabel(item.kind))}
+          ${item.label ? ` · ${escapeHtml(item.label)}` : ''}
+        </div>
+      </div>`;
+    })
+    .join('');
+}
+
 function renderState(data) {
   const statusBadge = document.getElementById('statusBadge');
   const resultCount = document.getElementById('resultCount');
@@ -122,6 +159,7 @@ function renderState(data) {
     renderSquattedCdns([]);
     renderAssetList('iframes', []);
     renderAssetList('scripts', []);
+    renderProbeResults([], { emptyMessage: '除外ドメインのため探索対象外です' });
     return;
   }
 
@@ -156,6 +194,13 @@ function renderState(data) {
   renderResults(data.results);
   renderAssetList('iframes', data.iframes);
   renderAssetList('scripts', data.scripts);
+  if (data.probeResults?.length) {
+    renderProbeResults(data.probeResults);
+    const probeStatus = document.getElementById('probeStatus');
+    if (probeStatus && !probeStatus.dataset.busy) {
+      probeStatus.textContent = `${data.probeResults.length} 件ヒット`;
+    }
+  }
 }
 
 async function getActiveTab() {
@@ -172,14 +217,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const originLabel = document.getElementById('originLabel');
   const rescanBtn = document.getElementById('rescanBtn');
+  const probeBtn = document.getElementById('probeBtn');
+  const probeStatus = document.getElementById('probeStatus');
   let pollTimer = null;
   let pollAttempts = 0;
   const MAX_POLL_ATTEMPTS = 20;
+  let latestData = null;
 
   const tab = await getActiveTab();
   if (!tab?.url?.startsWith('http')) {
     originLabel.textContent = 'HTTP(S) ページで開いてください';
     rescanBtn.disabled = true;
+    probeBtn.disabled = true;
     document.getElementById('results').className = 'results-list empty';
     document.getElementById('results').textContent = 'このページではスキャンできません';
     return;
@@ -194,6 +243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('results').textContent = '結果を取得できませんでした';
       return null;
     }
+    latestData = res.data;
     renderState(res.data);
     return res.data;
   }
@@ -226,6 +276,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => {
       rescanBtn.disabled = false;
     }, 500);
+  });
+
+  probeBtn.addEventListener('click', async () => {
+    probeBtn.disabled = true;
+    probeStatus.dataset.busy = '1';
+    probeStatus.textContent = '探索中...';
+    renderProbeResults([], { emptyMessage: '探索中...' });
+
+    const res = await sendMessage({
+      type: 'PROBE_FILES',
+      tabId: tab.id,
+      url: tab.url,
+      scripts: latestData?.scripts || [],
+    });
+
+    delete probeStatus.dataset.busy;
+    probeBtn.disabled = false;
+
+    if (!res.ok) {
+      probeStatus.textContent = '失敗';
+      renderProbeResults([], { emptyMessage: res.error || '探索に失敗しました' });
+      return;
+    }
+
+    const found = res.found || [];
+    probeStatus.textContent = found.length
+      ? `${found.length} / ${res.total} 件ヒット`
+      : `ヒットなし（${res.total} 件確認）`;
+    renderProbeResults(found, {
+      emptyMessage: `ヒットなし（${res.total} 件確認）`,
+    });
   });
 
   // popup 表示時は非同期スキャン完了までポーリング
