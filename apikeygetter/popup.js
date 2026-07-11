@@ -160,12 +160,15 @@ function renderState(data) {
     renderAssetList('iframes', []);
     renderAssetList('scripts', []);
     renderProbeResults([], { emptyMessage: '除外ドメインのため探索対象外です' });
+    const probeStatus = document.getElementById('probeStatus');
+    if (probeStatus && !probeStatus.dataset.busy) {
+      probeStatus.textContent = '';
+    }
     return;
   }
 
   const count = data.results?.length || 0;
   const cdnCount = data.squattedCdns?.length || 0;
-  const alert = count > 0 || cdnCount > 0;
 
   if (data.scanning) {
     statusBadge.textContent = 'Scanning';
@@ -194,11 +197,17 @@ function renderState(data) {
   renderResults(data.results);
   renderAssetList('iframes', data.iframes);
   renderAssetList('scripts', data.scripts);
+
+  const probeStatus = document.getElementById('probeStatus');
   if (data.probeResults?.length) {
     renderProbeResults(data.probeResults);
-    const probeStatus = document.getElementById('probeStatus');
     if (probeStatus && !probeStatus.dataset.busy) {
       probeStatus.textContent = `${data.probeResults.length} 件ヒット`;
+    }
+  } else {
+    renderProbeResults([]);
+    if (probeStatus && !probeStatus.dataset.busy) {
+      probeStatus.textContent = '';
     }
   }
 }
